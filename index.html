@@ -1342,6 +1342,9 @@
     <button id="testMusic" title="測試音樂系統" onclick="diagnoseMusicSystem()" style="font-size: 0.8rem; padding: 2px 6px;">
       🔍
     </button>
+    <button id="fixScroll" title="修復滾動" onclick="emergencyFixScroll()" style="font-size: 0.8rem; padding: 2px 6px; background: #ff6b6b;">
+      🔄
+    </button>
   </div>
 
   <!-- 音效元素 -->
@@ -1430,6 +1433,12 @@
 
     // 頁面載入時自動檢查每日簽到獎勵
     document.addEventListener('DOMContentLoaded', function() {
+      console.log('📄 頁面載入完成，檢查滾動狀態...');
+      
+      // 確保滾動功能正常
+      document.body.style.overflow = 'auto';
+      document.documentElement.style.overflow = 'auto';
+      
       // 延遲一點時間確保所有系統都已載入
       setTimeout(() => {
         checkDailyReward();
@@ -1654,6 +1663,14 @@
     function showCustomModal() {
       const modal = document.getElementById('customModal');
       
+      if (!modal) {
+        console.error('❌ 找不到自訂彈窗元素');
+        showCustomMessage('❌ 彈窗載入失敗', 'error');
+        return;
+      }
+      
+      console.log('🎨 顯示自訂角色彈窗');
+      
       // 載入現有的自訂資料到彈窗
       loadModalData();
       
@@ -1662,35 +1679,64 @@
       
       // 禁止背景滾動
       document.body.style.overflow = 'hidden';
+      
+      console.log('✅ 自訂角色彈窗已顯示');
     }
 
     // 關閉自訂設定彈窗
     function closeCustomModal() {
+      console.log('🔒 關閉自訂角色彈窗...');
+      
       const modal = document.getElementById('customModal');
-      modal.classList.remove('show');
+      if (modal) {
+        modal.classList.remove('show');
+        console.log('✅ 彈窗已隱藏');
+      } else {
+        console.error('❌ 找不到彈窗元素');
+      }
       
       // 恢復背景滾動
       document.body.style.overflow = 'auto';
+      console.log('✅ 背景滾動已恢復');
+      
+      // 強制重新啟用滾動
+      setTimeout(() => {
+        document.body.style.overflow = 'auto';
+        document.documentElement.style.overflow = 'auto';
+        console.log('🔄 強制恢復滾動完成');
+      }, 100);
     }
 
     // 載入資料到彈窗
     function loadModalData() {
+      console.log('📂 載入彈窗資料...');
+      
       const customUserData = localStorage.getItem('customUserData');
       if (customUserData) {
         try {
           const customData = JSON.parse(customUserData);
+          console.log('📂 找到自訂資料:', customData);
           
           // 更新彈窗中的資料
-          document.getElementById('modalPlayerName').value = customData.name || '';
-          document.getElementById('modalSlogan').value = customData.slogan || '';
-          document.getElementById('modalCharacterType').value = customData.characterType || 'warrior';
+          const nameInput = document.getElementById('modalPlayerName');
+          const sloganInput = document.getElementById('modalSlogan');
+          const typeSelect = document.getElementById('modalCharacterType');
+          const avatarImg = document.getElementById('modalAvatarImage');
           
-          if (customData.avatarDataUrl) {
-            document.getElementById('modalAvatarImage').src = customData.avatarDataUrl;
+          if (nameInput) nameInput.value = customData.name || '';
+          if (sloganInput) sloganInput.value = customData.slogan || '';
+          if (typeSelect) typeSelect.value = customData.characterType || 'warrior';
+          
+          if (customData.avatarDataUrl && avatarImg) {
+            avatarImg.src = customData.avatarDataUrl;
           }
+          
+          console.log('✅ 彈窗資料載入完成');
         } catch (e) {
-          console.log('載入彈窗資料失敗:', e);
+          console.error('❌ 載入彈窗資料失敗:', e);
         }
+      } else {
+        console.log('📂 沒有找到自訂資料，使用預設值');
       }
     }
 
@@ -1707,10 +1753,14 @@
 
     // 儲存彈窗自訂使用者
     function saveModalCustomUser() {
-      const modalName = document.getElementById('modalPlayerName').value.trim();
-      const modalSlogan = document.getElementById('modalSlogan').value.trim();
-      const modalType = document.getElementById('modalCharacterType').value;
-      const modalAvatarSrc = document.getElementById('modalAvatarImage').src;
+      console.log('💾 儲存自訂角色...');
+      
+      const modalName = document.getElementById('modalPlayerName')?.value?.trim() || '';
+      const modalSlogan = document.getElementById('modalSlogan')?.value?.trim() || '';
+      const modalType = document.getElementById('modalCharacterType')?.value || 'warrior';
+      const modalAvatarSrc = document.getElementById('modalAvatarImage')?.src || '';
+      
+      console.log('📝 角色資料:', { modalName, modalSlogan, modalType, modalAvatarSrc });
       
       if (!modalName) {
         showCustomMessage('⚠️ 請輸入角色名稱', 'warning');
@@ -1722,9 +1772,9 @@
         return;
       }
       
-      // 檢查是否為預設頭像
-      if (modalAvatarSrc.includes('avatar_TL.png')) {
-        showCustomMessage('⚠️ 請上傳頭像圖片', 'warning');
+      // 檢查是否為預設頭像（允許使用預設頭像，但要求至少輸入名稱和標語）
+      if (modalAvatarSrc.includes('avatar_TL.png') && !modalName && !modalSlogan) {
+        showCustomMessage('⚠️ 請至少輸入角色名稱和標語', 'warning');
         return;
       }
       
@@ -1738,11 +1788,18 @@
       };
       
       localStorage.setItem('customUserData', JSON.stringify(customUserData));
+      console.log('💾 自訂角色資料已儲存:', customUserData);
       
       // 更新主介面的角色資訊
-      LinkageSystem.player.setName(modalName);
-      document.getElementById('characterImage').src = modalAvatarSrc;
-      document.getElementById('characterSlogan').textContent = modalSlogan;
+      if (typeof LinkageSystem !== 'undefined' && LinkageSystem.player) {
+        LinkageSystem.player.setName(modalName);
+      }
+      
+      const characterImage = document.getElementById('characterImage');
+      const characterSlogan = document.getElementById('characterSlogan');
+      
+      if (characterImage) characterImage.src = modalAvatarSrc;
+      if (characterSlogan) characterSlogan.textContent = modalSlogan;
       
       // 更新角色對話系統
       if (window.CharacterDialogue) {
@@ -1757,6 +1814,8 @@
       
       // 播放成功音效
       playTypingSound();
+      
+      console.log('✅ 自訂角色儲存完成');
     }
 
     // 語音朗讀標語功能已移除
@@ -1785,84 +1844,8 @@
       }
     }
 
-    // 自訂使用者功能
-    let customAvatarDataUrl = null;
-
-    // 處理頭像上傳
-    document.getElementById('avatarUpload').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          customAvatarDataUrl = event.target.result;
-          document.getElementById('customAvatarImage').src = customAvatarDataUrl;
-          
-          // 顯示成功訊息
-          showCustomMessage('✅ 頭像上傳成功！', 'success');
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-
-    // 重置自訂頭像
-    function resetCustomAvatar() {
-      customAvatarDataUrl = null;
-      document.getElementById('customAvatarImage').src = 'img/avatars/avatar_TL.png';
-      document.getElementById('customPlayerName').value = '';
-      document.getElementById('customSlogan').value = '';
-      document.getElementById('customCharacterType').value = 'warrior';
-      document.getElementById('avatarUpload').value = '';
-      
-      showCustomMessage('🔄 已重置自訂設定', 'info');
-    }
-
-    // 儲存自訂使用者
-    function saveCustomUser() {
-      const customName = document.getElementById('customPlayerName').value.trim();
-      const customSlogan = document.getElementById('customSlogan').value.trim();
-      const customType = document.getElementById('customCharacterType').value;
-      
-      if (!customName) {
-        showCustomMessage('⚠️ 請輸入角色名稱', 'warning');
-        return;
-      }
-      
-      if (!customSlogan) {
-        showCustomMessage('⚠️ 請輸入角色標語', 'warning');
-        return;
-      }
-      
-      if (!customAvatarDataUrl) {
-        showCustomMessage('⚠️ 請上傳頭像圖片', 'warning');
-        return;
-      }
-      
-      // 儲存自訂使用者資料
-      const customUserData = {
-        name: customName,
-        slogan: customSlogan,
-        characterType: customType,
-        avatarDataUrl: customAvatarDataUrl,
-        createdAt: new Date().toISOString()
-      };
-      
-      localStorage.setItem('customUserData', JSON.stringify(customUserData));
-      
-      // 更新主介面的角色資訊
-      LinkageSystem.player.setName(customName);
-      document.getElementById('characterImage').src = customAvatarDataUrl;
-      document.getElementById('characterSlogan').textContent = customSlogan;
-      
-      // 更新角色對話系統
-      if (window.CharacterDialogue) {
-        window.CharacterDialogue.currentCharacter = customType;
-      }
-      
-      showCustomMessage('💾 自訂角色儲存成功！', 'success');
-      
-      // 播放成功音效
-      playTypingSound();
-    }
+    // 自訂使用者功能 - 已整合到彈窗系統中
+    // 舊的獨立函數已移除，現在統一使用彈窗系統
 
     // 顯示自訂訊息
     function showCustomMessage(message, type = 'info') {
@@ -1888,11 +1871,51 @@
       }, 3000);
     }
 
+    // 緊急修復滾動功能
+    function emergencyFixScroll() {
+      console.log('🚨 執行緊急滾動修復...');
+      
+      // 關閉所有彈窗
+      const modals = document.querySelectorAll('.modal-overlay');
+      modals.forEach(modal => {
+        modal.classList.remove('show');
+      });
+      
+      // 恢復所有滾動
+      document.body.style.overflow = 'auto';
+      document.documentElement.style.overflow = 'auto';
+      
+      // 移除所有可能阻止滾動的樣式
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.bottom = '';
+      
+      console.log('✅ 緊急修復完成');
+      showCustomMessage('🔄 滾動功能已修復', 'success');
+    }
+
 
 
     // 點擊彈窗頭像預覽觸發檔案選擇
-    document.getElementById('modalAvatarPreview').addEventListener('click', function() {
-      document.getElementById('modalAvatarUpload').click();
+    document.addEventListener('DOMContentLoaded', function() {
+      const modalAvatarPreview = document.getElementById('modalAvatarPreview');
+      if (modalAvatarPreview) {
+        modalAvatarPreview.addEventListener('click', function() {
+          console.log('🖱️ 點擊頭像預覽區域');
+          const modalAvatarUpload = document.getElementById('modalAvatarUpload');
+          if (modalAvatarUpload) {
+            modalAvatarUpload.click();
+          } else {
+            console.error('❌ 找不到頭像上傳元素');
+            showCustomMessage('❌ 上傳功能載入失敗', 'error');
+          }
+        });
+        console.log('✅ 頭像預覽點擊事件已綁定');
+      } else {
+        console.error('❌ 找不到頭像預覽元素');
+      }
     });
 
     // 使用者名稱處理
@@ -2271,17 +2294,38 @@
     });
 
     // 處理彈窗頭像上傳
-    document.getElementById('modalAvatarUpload').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          document.getElementById('modalAvatarImage').src = event.target.result;
-          
-          // 顯示成功訊息
-          showCustomMessage('✅ 彈窗頭像上傳成功！', 'success');
-        };
-        reader.readAsDataURL(file);
+    document.addEventListener('DOMContentLoaded', function() {
+      const modalAvatarUpload = document.getElementById('modalAvatarUpload');
+      if (modalAvatarUpload) {
+        modalAvatarUpload.addEventListener('change', function(e) {
+          console.log('📁 處理頭像上傳...');
+          const file = e.target.files[0];
+          if (file) {
+            console.log('📁 選擇的檔案:', file.name, file.size, 'bytes');
+            const reader = new FileReader();
+            reader.onload = function(event) {
+              const modalAvatarImage = document.getElementById('modalAvatarImage');
+              if (modalAvatarImage) {
+                modalAvatarImage.src = event.target.result;
+                console.log('✅ 頭像上傳成功');
+                showCustomMessage('✅ 頭像上傳成功！', 'success');
+              } else {
+                console.error('❌ 找不到頭像預覽元素');
+                showCustomMessage('❌ 頭像預覽載入失敗', 'error');
+              }
+            };
+            reader.onerror = function() {
+              console.error('❌ 檔案讀取失敗');
+              showCustomMessage('❌ 檔案讀取失敗', 'error');
+            };
+            reader.readAsDataURL(file);
+          } else {
+            console.log('📁 沒有選擇檔案');
+          }
+        });
+        console.log('✅ 頭像上傳事件監聽器已綁定');
+      } else {
+        console.error('❌ 找不到頭像上傳元素');
       }
     });
   </script>
