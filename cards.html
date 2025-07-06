@@ -1,0 +1,2191 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>卡片倉庫 - Typing Hero</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="card-style.css">
+  <style>
+    /* ====== 全域樣式 ====== */
+    :root {
+      --glow-cyan: #00ffff;
+      --glow-magenta: #a259ff;
+      --glow-gold: #ffd700;
+      --glow-red: #ff6b6b;
+      --bg-dark: rgba(10, 20, 40, 0.85);
+    }
+    html {
+      /* scroll-behavior: smooth; */
+    }
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      margin: 0;
+      font-family: 'Orbitron', sans-serif;
+      background: url('https://wallpaperaccess.com/full/192936.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+      text-align: center;
+      overflow-y: auto;
+    }
+
+    /* ====== 全域捲軸樣式 ====== */
+    body::-webkit-scrollbar {
+      width: 12px;
+    }
+    body::-webkit-scrollbar-track {
+      background: #0a1428; /* 深藍色背景，配合主題 */
+    }
+    body::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, var(--glow-cyan), var(--glow-magenta));
+      border-radius: 6px;
+      border: 2px solid #0a1428; /* 創造懸浮感 */
+    }
+    body::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, var(--glow-gold), var(--glow-red)); /* 懸停時變色 */
+    }
+
+    header {
+      background: rgba(10, 20, 40, 0.85);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 0 24px 8px #00ffff88, 0 0 40px 0 #a259ff33 inset;
+      border-bottom: 2px solid var(--glow-cyan);
+      backdrop-filter: blur(4px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.1rem;
+      color: #00ffff;
+      letter-spacing: 2px;
+      text-shadow: 0 0 12px #00ffff, 0 0 32px #a259ff;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .btn {
+      background: linear-gradient(90deg, #00ffff 0%, #a259ff 100%);
+      color: #000;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 0 16px #00ffff, 0 0 24px #a259ff99;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn:hover {
+      transform: scale(1.07);
+      box-shadow: 0 0 32px #00ffff, 0 0 48px #a259ffcc;
+    }
+
+    .stars-display {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 16px;
+      background: var(--bg-dark);
+      border: 2px solid var(--glow-gold);
+      border-radius: 12px;
+      font-size: 1.2rem;
+      color: var(--glow-gold);
+      font-weight: bold;
+      text-shadow: 0 0 8px var(--glow-gold);
+      box-shadow: 0 0 16px #ffd70055;
+      transition: all 0.3s ease;
+    }
+    .stars-display:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 24px #ffd70088;
+    }
+
+    /* ====== 控制列（搜尋、稀有度、類別） ====== */
+    #controls {
+      margin: 20px auto;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      max-width: 900px;
+      padding: 0 10px;
+      background: rgba(10, 20, 40, 0.7);
+      border-radius: 14px;
+      box-shadow: 0 0 24px #00ffff33, 0 0 40px #a259ff22 inset;
+      border: 2px solid #00ffff;
+    }
+    #controls input,
+    #controls select {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1.5px solid #00ffff;
+      background: rgba(10, 20, 40, 0.7);
+      color: #00ffff;
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+      box-shadow: 0 0 8px #00ffff33;
+      transition: all 0.3s ease;
+    }
+    #controls input:focus,
+    #controls select:focus {
+      outline: none;
+      border-color: var(--glow-gold);
+      box-shadow: 0 0 12px var(--glow-gold);
+    }
+    #controls button {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1.5px solid #00ffff;
+      background: rgba(10, 20, 40, 0.7);
+      color: #00ffff;
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+      box-shadow: 0 0 16px #00ffff88;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    #controls button:hover {
+      background: rgba(0, 255, 255, 0.2);
+      box-shadow: 0 0 12px #00ffff66;
+    }
+    #controls button.active {
+      background: rgba(0, 255, 255, 0.3);
+      color: #fff;
+      box-shadow: 0 0 16px #00ffff88;
+    }
+
+    /* ====== 頁籤按鈕 ====== */
+    .tab-container {
+      display: flex;
+      gap: 8px;
+    }
+    .tab-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1.5px solid var(--glow-cyan);
+      background: rgba(10, 20, 40, 0.7);
+      color: var(--glow-cyan);
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+      box-shadow: 0 0 8px #00ffff33;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: 'Orbitron', sans-serif;
+    }
+    .tab-btn:hover {
+      background: rgba(0, 255, 255, 0.2);
+      box-shadow: 0 0 12px #00ffff66;
+    }
+    .tab-btn.active {
+      background: var(--glow-cyan);
+      color: #000;
+      font-weight: bold;
+      box-shadow: 0 0 16px #00ffff88;
+    }
+
+    /* ====== 收集進度 ====== */
+    #progress {
+      margin: 10px 0;
+      font-size: 1.1rem;
+      color: #ffd700;
+      text-shadow: 0 0 8px #ffd700, 0 0 16px #00ffff;
+    }
+
+    /* ====== 卡片格子（四欄、寬度 180px） ====== */
+    #cardGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 18px;
+      padding: 28px 20px 10px 20px;
+      justify-content: center;
+      overflow-x: auto;
+      box-sizing: border-box;
+      background: rgba(10, 20, 40, 0.7);
+      border-radius: 14px;
+      box-shadow: 0 0 32px #00ffff33, 0 0 80px #a259ff22 inset;
+      position: relative;
+      max-width: 1000px;
+      margin: 0 auto;
+      border: 2px solid #00ffff;
+    }
+    #cardGrid:before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: url('https://png.pngtree.com/thumb_back/fw800/background/20230613/pngtree-cosmic-starry-sky-background-image_2890957.jpg') repeat center center,
+                  linear-gradient(to bottom, rgba(10, 20, 40, 0.5) 0%, rgba(10, 20, 40, 0.9) 100%);
+      background-blend-mode: overlay;
+      opacity: 0.2;
+      border-radius: 14px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    #cardGrid > * { position: relative; z-index: 1; }
+    .card {
+      width: 180px;
+      height: 280px;
+      position: relative;
+      background: rgba(10, 20, 40, 0.85);
+      border-radius: 16px;
+      padding: 10px;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+      animation: float 3s ease-in-out infinite;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+      box-shadow: 0 0 16px #00ffff55, 0 0 32px #a259ff33;
+      border: 2.5px solid #00ffff;
+      backdrop-filter: blur(8px);
+    }
+    .card:hover {
+      transform: translateY(-10px) scale(1.06) rotate(-2deg);
+      box-shadow: 0 15px 32px rgba(0,0,0,0.3), 0 0 32px #00ffff, 0 0 48px #a259ffcc;
+    }
+    .card.locked {
+      cursor: default;
+      opacity: 0.5;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .card img {
+      width: 100%;
+      height: 50%;
+      border-radius: 10px;
+      filter: drop-shadow(0 0 12px #00ffffcc);
+      object-fit: cover;
+      background: #000;
+    }
+    .card .card-media {
+      width: 100%;
+      height: 50%;
+      border-radius: 10px;
+      filter: drop-shadow(0 0 12px #00ffffcc);
+      object-fit: cover;
+      background: #000;
+    }
+    .card video.card-media {
+      border: 2px solid rgba(0, 255, 255, 0.3);
+      transition: border-color 0.3s ease;
+    }
+    .card:hover video.card-media {
+      border-color: rgba(0, 255, 255, 0.8);
+    }
+    .card.locked img {
+      filter: grayscale(1) brightness(0.3);
+    }
+    .stars {
+      margin-top: 4px;
+      font-size: 1.1rem;
+      color: #ffd700;
+      line-height: 1;
+      letter-spacing: 2px;
+      text-shadow: 0 0 8px #fff, 0 0 16px #00ffff;
+    }
+    .card .label {
+      margin-top: 6px;
+      font-size: 0.9rem;
+      color: #00ffff;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: unset;
+      width: 100%;
+      text-shadow: 0 0 8px #00ffff, 0 0 16px #a259ff;
+      line-height: 1.2;
+      word-wrap: break-word;
+      hyphens: auto;
+      min-height: 2.4em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .card .label .chinese-text {
+      font-size: 0.9rem;
+      color: #00ffff;
+      margin-bottom: 2px;
+      text-shadow: 0 0 8px #00ffff, 0 0 16px #a259ff;
+      font-weight: bold;
+    }
+    
+    .card .label .english-text {
+      font-size: 0.8rem;
+      color: #ffd700;
+      text-shadow: 0 0 6px #ffd700, 0 0 12px #ffaa00;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+    .card .category-tag {
+      margin-top: 4px;
+      font-size: 0.85rem;
+      color: #ffd700;
+      text-shadow: 0 0 6px #fff, 0 0 12px #00ffff;
+    }
+    
+    /* 新增：卡片描述樣式 */
+    .card .description-tag {
+      margin-top: 2px;
+      font-size: 0.7rem;
+      color: #ccc;
+      text-shadow: 0 0 4px #ccc;
+      line-height: 1.1;
+      max-height: 2.2em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      word-wrap: break-word;
+      hyphens: auto;
+      padding: 0 2px;
+    }
+    
+
+    .common { border: 2.5px solid #00ffff; }
+    .rare   { border: 2.5px solid #a259ff; }
+    .epic   { border: 2.5px solid #ffd700; box-shadow: 0 0 16px #ffd700; }
+    .rank-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      z-index: 10;
+      background: linear-gradient(90deg, #00ffff 0%, #a259ff 100%);
+      color: #000;
+      box-shadow: 0 0 8px #00ffff, 0 0 16px #a259ff;
+    }
+    .card.common .rank-badge {
+      background: #00ffff;
+      border: 2px solid #00ffff;
+      color: #000;
+    }
+    .card.rare .rank-badge {
+      background: #a259ff;
+      border: 2px solid #a259ff;
+      color: #fff;
+    }
+    .card.epic .rank-badge {
+      background: #ffd700;
+      border: 2px solid #ffd700;
+      color: #000;
+    }
+
+    /* ====== 遮罩 & Modal ====== */
+    #overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      z-index: 900;
+    }
+    /* Modal 外框套用與卡片相同設定 */
+    #modal .card {
+      width: 260px;
+      height: 430px;
+      margin: 0 auto;
+      background: rgba(10, 20, 40, 0.95);
+      border-radius: 16px;
+      padding: 14px;
+      border: 2.5px solid #00ffff;
+      box-shadow: 0 0 32px #00ffff, 0 0 48px #a259ffcc;
+    }
+    #modal {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      background: transparent;
+      padding: 0;
+      border: none;
+      z-index: 1000;
+      transition: transform 0.3s;
+      color: #fff;
+      box-sizing: border-box;
+    }
+    #modal.show {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #modal .card img {
+      width: 100%;
+      height: 50%;
+      border-radius: 10px;
+      filter: drop-shadow(0 0 12px #00ffffcc);
+      object-fit: cover;
+      background: #000;
+    }
+    #modal .card .card-media {
+      width: 100%;
+      height: 50%;
+      border-radius: 10px;
+      filter: drop-shadow(0 0 12px #00ffffcc);
+      object-fit: cover;
+      background: #000;
+    }
+    #modal .card video.card-media {
+      border: 2px solid rgba(0, 255, 255, 0.5);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    }
+    #modal .card video.card-media::-webkit-media-controls {
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 8px;
+    }
+    #modal .card .stars {
+      margin-top: 6px;
+      font-size: 1.1rem;
+      color: #ffd700;
+      line-height: 1;
+      letter-spacing: 2px;
+      text-shadow: 0 0 8px #fff, 0 0 16px #00ffff;
+    }
+    #modal .card .label {
+      margin-top: 6px;
+      font-size: 1rem;
+      color: #00ffff;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: unset;
+      width: 100%;
+      text-shadow: 0 0 8px #00ffff, 0 0 16px #a259ff;
+      text-align: center;
+      line-height: 1.3;
+      word-wrap: break-word;
+      hyphens: auto;
+      min-height: 2.6em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #modal .card .label .chinese-text {
+      font-size: 1rem;
+      color: #00ffff;
+      margin-bottom: 3px;
+      text-shadow: 0 0 8px #00ffff, 0 0 16px #a259ff;
+      font-weight: bold;
+    }
+    #modal .card .label .english-text {
+      font-size: 0.9rem;
+      color: #ffd700;
+      text-shadow: 0 0 6px #ffd700, 0 0 12px #ffaa00;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+    #modal .card .category-tag {
+      margin-top: 4px;
+      font-size: 0.95rem;
+      color: #ffd700;
+      text-shadow: 0 0 6px #fff, 0 0 12px #00ffff;
+      text-align: center;
+    }
+    #modal .card .rank-badge {
+      top: 8px;
+      right: 8px;
+      width: 36px;
+      height: 36px;
+      font-size: 1.1rem;
+      background: linear-gradient(90deg, #00ffff 0%, #a259ff 100%);
+      color: #000;
+      box-shadow: 0 0 8px #00ffff, 0 0 16px #a259ff;
+    }
+
+    #modal .description {
+      margin-top: 14px;
+      text-align: left;
+      line-height: 1.6;
+      font-size: 1.05rem;
+      max-height: 160px;
+      overflow-y: auto;
+      width: 260px;
+      background: rgba(10, 20, 40, 0.95);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 0 16px #00ffff99, 0 0 40px #a259ff44 inset;
+      color: #fff;
+      text-shadow: 0 0 8px #000a;
+    }
+    #modal .description::-webkit-scrollbar {
+      width: 8px;
+    }
+    #modal .description::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.3);
+      border-radius: 4px;
+    }
+    #modal .description::-webkit-scrollbar-thumb {
+      background: var(--glow-cyan);
+      border-radius: 4px;
+    }
+    #modal .description::-webkit-scrollbar-thumb:hover {
+      background: var(--glow-gold);
+    }
+    
+    /* 卡牌效果資訊樣式 */
+    #modal .card-effect {
+      margin-top: 12px;
+      padding: 10px;
+      background: rgba(0, 255, 255, 0.1);
+      border-radius: 8px;
+      border: 1px solid rgba(0, 255, 255, 0.3);
+    }
+    
+    #modal .card-effect h4 {
+      color: #00ffff;
+      margin: 0 0 8px 0;
+      font-size: 1rem;
+      text-align: center;
+    }
+    
+    #modal .card-effect .effect-desc {
+      color: #ffd700;
+      font-size: 0.9rem;
+      text-align: center;
+      margin: 0;
+      font-weight: 500;
+    }
+    
+    #modal .card-effect .effect-type {
+      color: #a259ff;
+      font-size: 0.8rem;
+      text-align: center;
+      margin-top: 5px;
+      opacity: 0.8;
+    }
+    .sound-btn-modal {
+      background: linear-gradient(90deg, #00ffff 0%, #a259ff 100%);
+      color: #000;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      margin-top: 12px;
+      box-shadow: 0 0 16px #00ffff, 0 0 24px #a259ff99;
+      font-weight: bold;
+      letter-spacing: 1px;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .sound-btn-modal:hover {
+      transform: scale(1.07);
+      box-shadow: 0 0 32px #00ffff, 0 0 48px #a259ffcc;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .disenchant-btn-modal {
+      background: linear-gradient(90deg, #ff8a00 0%, #e52e71 100%);
+      color: #fff;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 0 16px #ff8a00, 0 0 24px #e52e7199;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .disenchant-btn-modal:hover {
+      transform: scale(1.07);
+      box-shadow: 0 0 32px #ff8a00, 0 0 48px #e52e71cc;
+    }
+    .disenchant-btn-modal:disabled {
+      background: #555;
+      color: #999;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .disenchant-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .quantity-selector {
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      border: 1px solid #ff8a00;
+    }
+    .quantity-btn {
+      background: transparent;
+      border: none;
+      color: #ff8a00;
+      font-size: 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 0 12px;
+    }
+    .quantity-btn:hover {
+      color: #fff;
+    }
+    #disenchant-quantity {
+      width: 40px;
+      text-align: center;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: bold;
+      -moz-appearance: textfield;
+    }
+    #disenchant-quantity::-webkit-outer-spin-button,
+    #disenchant-quantity::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .close-btn {
+      position: absolute;
+      top: -16px; left: -16px;
+      background: red;
+      color: white;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 6px #f00;
+    }
+
+    /* ====== 新卡片圖標 ====== */
+    .new-card-badge {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: linear-gradient(45deg, #ff6b6b, #ffd93d, #ff6b6b);
+      background-size: 200% 200%;
+      color: #fff;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      border-radius: 15px;
+      z-index: 15;
+      box-shadow: 
+        0 0 15px #ff6b6b, 
+        0 0 25px #ffd93d,
+        0 0 35px #ff6b6b;
+      animation: 
+        newCardPulse 1.5s ease-in-out infinite,
+        newCardGradient 2s ease-in-out infinite;
+      text-shadow: 0 0 6px #000;
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      transform-origin: center;
+    }
+    
+    @keyframes newCardPulse {
+      0%, 100% { 
+        transform: scale(1) rotate(0deg);
+        box-shadow: 
+          0 0 15px #ff6b6b, 
+          0 0 25px #ffd93d,
+          0 0 35px #ff6b6b;
+      }
+      25% {
+        transform: scale(1.15) rotate(-2deg);
+        box-shadow: 
+          0 0 25px #ff6b6b, 
+          0 0 35px #ffd93d,
+          0 0 45px #ff6b6b;
+      }
+      50% { 
+        transform: scale(1.25) rotate(0deg);
+        box-shadow: 
+          0 0 30px #ff6b6b, 
+          0 0 40px #ffd93d,
+          0 0 50px #ff6b6b;
+      }
+      75% {
+        transform: scale(1.15) rotate(2deg);
+        box-shadow: 
+          0 0 25px #ff6b6b, 
+          0 0 35px #ffd93d,
+          0 0 45px #ff6b6b;
+      }
+    }
+    
+    @keyframes newCardGradient {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    .new-card-glow {
+      animation: newCardGlow 2s ease-in-out infinite;
+      position: relative;
+    }
+    
+    .new-card-glow::before {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: -5px;
+      right: -5px;
+      bottom: -5px;
+      background: linear-gradient(45deg, #ff6b6b, #ffd93d, #ff6b6b);
+      border-radius: 20px;
+      z-index: -1;
+      opacity: 0.6;
+      animation: newCardGlowRing 2s ease-in-out infinite;
+    }
+    
+    @keyframes newCardGlow {
+      0%, 100% { 
+        box-shadow: 
+          0 0 20px #00ffff55, 
+          0 0 40px #a259ff33,
+          0 0 15px #ff6b6b88;
+      }
+      25% {
+        box-shadow: 
+          0 0 25px #00ffff66, 
+          0 0 45px #a259ff44,
+          0 0 25px #ff6b6b99,
+          0 0 35px #ffd93d66;
+      }
+      50% { 
+        box-shadow: 
+          0 0 30px #00ffff77, 
+          0 0 50px #a259ff55,
+          0 0 35px #ff6b6baa,
+          0 0 45px #ffd93d77;
+      }
+      75% {
+        box-shadow: 
+          0 0 25px #00ffff66, 
+          0 0 45px #a259ff44,
+          0 0 25px #ff6b6b99,
+          0 0 35px #ffd93d66;
+      }
+    }
+    
+    @keyframes newCardGlowRing {
+      0%, 100% { 
+        transform: scale(1);
+        opacity: 0.6;
+      }
+      50% { 
+        transform: scale(1.1);
+        opacity: 0.8;
+      }
+    }
+
+    .video-indicator {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 4px 6px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      z-index: 10;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      animation: videoIndicatorPulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes videoIndicatorPulse {
+      0%, 100% { 
+        transform: scale(1);
+        opacity: 0.8;
+      }
+      50% { 
+        transform: scale(1.1);
+        opacity: 1;
+      }
+    }
+
+    /* ====== YouTube 影片相關樣式 ====== */
+    .card iframe.card-media {
+      border: 2px solid rgba(0, 255, 255, 0.3);
+      transition: border-color 0.3s ease;
+      pointer-events: none; /* 防止在卡片上直接操作 iframe */
+    }
+    .card:hover iframe.card-media {
+      border-color: rgba(0, 255, 255, 0.8);
+    }
+    .card .youtube-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      z-index: 5;
+    }
+    .card .youtube-overlay:hover {
+      background: rgba(0, 0, 0, 0.1);
+    }
+    .card .youtube-overlay .play-button {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 0, 0, 0.8);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 16px;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+      transition: all 0.3s ease;
+    }
+    .card .youtube-overlay:hover .play-button {
+      transform: scale(1.2);
+      box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+    }
+    .card .video-loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #00ffff;
+      font-size: 12px;
+      z-index: 6;
+    }
+    .card .video-error {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #ff6b6b;
+      font-size: 12px;
+      z-index: 6;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 8px;
+      border-radius: 6px;
+    }
+
+    /* Modal 中的 YouTube 影片樣式 */
+    #modal .card iframe.card-media {
+      border: 2px solid rgba(0, 255, 255, 0.5);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      pointer-events: auto; /* Modal 中可以操作 */
+    }
+    #modal .card iframe.card-media::-webkit-media-controls {
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 8px;
+    }
+
+    /* ====== 影片按鈕樣式 ====== */
+    .video-button {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 32px;
+      height: 32px;
+      background: rgba(255, 0, 0, 0.8);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 15;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .video-button:hover {
+      transform: scale(1.1);
+      background: rgba(255, 0, 0, 1);
+      box-shadow: 0 0 16px rgba(255, 0, 0, 0.8);
+      border-color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .video-icon {
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+      text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+    }
+
+    /* 新增：媒體容器樣式 */
+    .media-container {
+      position: relative;
+      width: 100%;
+      height: 50%;
+    }
+    
+    .media-container .card-media {
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+      filter: drop-shadow(0 0 12px #00ffffcc);
+      object-fit: cover;
+      background: #000;
+    }
+
+    /* ====== 影片 Modal 樣式 ====== */
+    .video-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      backdrop-filter: blur(8px);
+    }
+    
+    .video-modal-content {
+      background: rgba(10, 20, 40, 0.95);
+      border: 2px solid #00ffff;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow: hidden;
+      box-shadow: 0 0 32px #00ffff, 0 0 48px #a259ffcc;
+    }
+    
+    .video-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      background: rgba(0, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+    }
+    
+    .video-modal-header h3 {
+      color: #00ffff;
+      margin: 0;
+      font-size: 1.2rem;
+      text-shadow: 0 0 8px #00ffff;
+    }
+    
+    .video-modal-close {
+      background: rgba(255, 0, 0, 0.8);
+      color: white;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .video-modal-close:hover {
+      background: rgba(255, 0, 0, 1);
+      transform: scale(1.1);
+      box-shadow: 0 0 12px rgba(255, 0, 0, 0.8);
+    }
+    
+    .video-modal-body {
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 400px;
+    }
+    
+    .video-modal-body iframe,
+    .video-modal-body video {
+      width: 100%;
+      height: 400px;
+      border-radius: 12px;
+      border: 2px solid rgba(0, 255, 255, 0.3);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+    }
+    
+    .video-modal-body iframe {
+      background: #000;
+    }
+    
+    .video-modal-body video {
+      background: #000;
+    }
+    
+    /* ====== 成就系統樣式 ====== */
+    .badge {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid;
+      position: relative;
+    }
+    
+    .badge.locked {
+      background: rgba(128, 128, 128, 0.3);
+      border-color: #666;
+      color: #666;
+      cursor: default;
+      filter: grayscale(1);
+    }
+    
+    .badge.unlocked {
+      cursor: pointer;
+      animation: badgeGlow 2s ease-in-out infinite alternate;
+    }
+    
+    .badge.unlocked:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 20px currentColor;
+    }
+    
+    .badge-bronze.unlocked {
+      background: linear-gradient(45deg, #cd7f32, #daa520);
+      border-color: #cd7f32;
+      color: #fff;
+      box-shadow: 0 0 12px #cd7f32;
+    }
+    
+    .badge-silver.unlocked {
+      background: linear-gradient(45deg, #c0c0c0, #e5e4e2);
+      border-color: #c0c0c0;
+      color: #333;
+      box-shadow: 0 0 12px #c0c0c0;
+    }
+    
+    .badge-gold.unlocked {
+      background: linear-gradient(45deg, #ffd700, #ffed4e);
+      border-color: #ffd700;
+      color: #333;
+      box-shadow: 0 0 12px #ffd700;
+    }
+    
+    .badge-platinum.unlocked {
+      background: linear-gradient(45deg, #e5e4e2, #b4b4b4);
+      border-color: #e5e4e2;
+      color: #333;
+      box-shadow: 0 0 12px #e5e4e2;
+    }
+    
+    .badge-diamond.unlocked {
+      background: linear-gradient(45deg, #b9f2ff, #00ffff);
+      border-color: #b9f2ff;
+      color: #333;
+      box-shadow: 0 0 12px #b9f2ff;
+    }
+    
+    @keyframes badgeGlow {
+      0% { box-shadow: 0 0 12px currentColor; }
+      100% { box-shadow: 0 0 20px currentColor, 0 0 30px currentColor; }
+    }
+    
+    .reward-stars {
+      color: #ffd700;
+      font-weight: bold;
+      text-shadow: 0 0 8px #ffd700;
+    }
+
+    /* ====== 已擁有標記 ====== */
+    .owned-stamp {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.7), rgba(162, 89, 255, 0.7));
+      color: #fff;
+      padding: 3px 7px;
+      font-size: 0.75rem;
+      border-radius: 6px;
+      font-weight: bold;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+      z-index: 10;
+      backdrop-filter: blur(2px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .avatar-head {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 40%; /* 或 center 35%/45% 視臉部位置微調 */
+      border-radius: 50%;
+      display: block;
+      transition: transform 0.3s;
+    }
+
+    /* ====== 新卡片高亮動畫 ====== */
+    @keyframes newCardHighlight {
+      0%, 100% { 
+        transform: scale(1);
+        box-shadow: 0 0 16px #00ffff55, 0 0 32px #a259ff33;
+      }
+      50% { 
+        transform: scale(1.1);
+        box-shadow: 0 0 32px #00ffff, 0 0 48px #a259ffcc, 0 0 20px #ffd700;
+      }
+    }
+
+    /* ====== 稀有度圖標樣式 ====== */
+    .rarity-icon {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-weight: bold;
+      font-size: 1.1rem;
+      z-index: 15;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    }
+    
+    .rarity-icon.common {
+      background: linear-gradient(135deg, #00ffff, #00cccc);
+      color: #000;
+      box-shadow: 0 0 8px #00ffff, 0 0 16px #00ffff88;
+    }
+    
+    .rarity-icon.rare {
+      background: linear-gradient(135deg, #a259ff, #8a2be2);
+      color: #fff;
+      box-shadow: 0 0 8px #a259ff, 0 0 16px #a259ff88;
+    }
+    
+    .rarity-icon.epic {
+      background: linear-gradient(135deg, #ffd700, #ff8c00);
+      color: #000;
+      box-shadow: 0 0 8px #ffd700, 0 0 16px #ffd70088;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📁 卡片收藏</h1>
+    <div class="header-actions">
+      <span id="totalStarsCount" class="stars-display">⭐ 0</span>
+      
+      <button class="btn" onclick="location.href='index.html'">🏠 首頁</button>
+    </div>
+  </header>
+
+  <!-- 新增：功能選單區域 -->
+  <div id="featureMenu" style="
+    background: rgba(10, 20, 40, 0.8);
+    border: 2px solid #00ffff;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 10px auto;
+    max-width: 900px;
+    text-align: center;
+    box-sizing: border-box;
+  ">
+    <h3 style="color: #00ffff; margin: 0 0 16px 0;">🚀 快速功能</h3>
+    <div style="
+      display: flex; 
+      gap: 16px; 
+      justify-content: center; 
+      flex-wrap: wrap; 
+      align-items: center;
+      min-height: 44px;
+    ">
+      <button class="btn" onclick="location.href='gacha.html'">🎴 抽卡</button>
+    </div>
+  </div>
+
+  <!-- 搜尋、稀有度、類別 -->
+  <div id="controls">
+    <input type="text" id="searchInput" placeholder="搜尋單字或中文" oninput="renderCards()">
+    <select id="rarityFilter" onchange="renderCards()">
+      <option value="all">全部稀有度</option>
+      <option value="普通">普通</option>
+      <option value="稀有">稀有</option>
+      <option value="超稀有">超稀有</option>
+    </select>
+    <select id="categoryFilter" onchange="renderCards()">
+      <option value="all">全部類別</option>
+      <!-- JS 會動態把 cards.js 的 category 填進去 -->
+    </select>
+    <div class="tab-container">
+      <button class="tab-btn active" data-filter="all">全部卡片</button>
+      <button class="tab-btn" data-filter="owned">📦 我的收藏</button>
+    </div>
+  </div>
+
+  <div id="progress">已解鎖：0 / 0</div>
+  
+
+  
+  <div id="cardGrid"></div>
+
+  <div id="overlay"></div>
+  <div id="modal">
+    <div class="card">
+      <div class="close-btn" onclick="closeModal()">✕</div>
+      <img id="modalImg" src="" alt="卡片圖片">
+      <div class="stars" id="modalStars">★★★</div>
+      <div class="label" id="modalLabel">
+        <div class="chinese-text">卡片名稱</div>
+        <div class="english-text">Card Name</div>
+      </div>
+      <div class="category-tag" id="modalCategory">類別：範例</div>
+
+    </div>
+    <!-- 刪除卡片效果相關元素 -->
+    <div class="modal-actions">
+      <button class="sound-btn-modal" id="modalSoundBtn">🔊 播放</button>
+
+    </div>
+    <audio id="modalAudio" src=""></audio>
+  </div>
+
+  <!-- 先載入 cards.js（必須放在頁面相同資料夾，或自行修改路徑） -->
+  <script src="js/sound.js"></script>
+  <script src="js/userData.js"></script>
+  <script src="js/starRewardSystem.js"></script>
+  <script src="js/cardUtils.js"></script> <!-- 引入共享的卡牌工具函式 -->
+  <!-- <script src="js/cards.js"></script> 暫時禁用，有語法錯誤 -->
+  <script src="cards.js"></script> <!-- 載入主卡片資料，包含影片屬性 -->
+  <script src="js/achievementSystem.js"></script>
+  <script>
+    // -------- 0. 從 cards.js 取得 allCards 資料 --------
+    console.log('正在載入 allCards...');
+    console.log('window.allCards:', window.allCards);
+    
+    // 等待 cards.js 完全載入
+    function waitForAllCards() {
+      if (window.allCards && window.allCards.length > 0) {
+        console.log('allCards 載入成功，長度:', window.allCards.length);
+        initializePage();
+      } else {
+        console.log('等待 allCards 載入...');
+        setTimeout(waitForAllCards, 100);
+      }
+    }
+    
+    // -------- 1. 從 localStorage 拿 ownedCards --------
+    let ownedCards = LinkageSystem.cards.getOwnedCards();
+    let recentlyObtainedCards = JSON.parse(localStorage.getItem('recentlyObtainedCards') || '[]');
+    
+    // 開始等待 allCards 載入
+    console.log('🚀 頁面開始載入...');
+    waitForAllCards();
+
+    // -------- 3. 初始化「類別選單」 --------
+    function initCategoryOptions() {
+      const categorySet = new Set();
+      window.allCards.forEach(card => {
+        if (card.category) categorySet.add(card.category);
+      });
+      const categoryFilter = document.getElementById("categoryFilter");
+      // 清掉除了「全部」以外的選項
+      Array.from(categoryFilter.querySelectorAll("option")).forEach(opt => {
+        if (opt.value !== "all") opt.remove();
+      });
+      Array.from(categorySet).sort().forEach(cat => {
+        const option = document.createElement("option");
+        option.value = cat;
+        option.textContent = cat;
+        categoryFilter.appendChild(option);
+      });
+    }
+
+    // -------- 4. 渲染卡片倉庫(搜尋+篩選+解鎖狀態) --------
+    function renderCards() {
+      // 重新拿 localStorage，確保與抽卡頁同步
+      try {
+        ownedCards = LinkageSystem.cards.getOwnedCards();
+        recentlyObtainedCards = JSON.parse(localStorage.getItem('recentlyObtainedCards') || '[]');
+        
+        // 添加調試資訊
+        console.log('🔍 renderCards 調試資訊:');
+        console.log('- ownedCards 數量:', Object.keys(ownedCards).length);
+        console.log('- recentlyObtainedCards 數量:', recentlyObtainedCards.length);
+        console.log('- window.allCards 數量:', window.allCards ? window.allCards.length : 'undefined');
+      } catch (error) {
+        console.error('獲取卡片資料時發生錯誤:', error);
+        ownedCards = {};
+        recentlyObtainedCards = [];
+      }
+
+      const search = document.getElementById("searchInput").value.trim().toLowerCase();
+      const filterRarity = document.getElementById("rarityFilter").value;
+      const filterCategory = document.getElementById("categoryFilter").value;
+      const ownedFilter = document.querySelector('.tab-btn.active').dataset.filter;
+      const showOwnedOnly = (ownedFilter === 'owned');
+      const grid = document.getElementById("cardGrid");
+      grid.innerHTML = "";
+
+      // 簡化後的排序邏輯
+      const sortedCards = [...window.allCards].sort((a, b) => {
+        const aIsUnlocked = LinkageSystem.cards.isCardOwned(a.word);
+        const bIsUnlocked = LinkageSystem.cards.isCardOwned(b.word);
+
+        // 1. 已解鎖的卡片優先
+        if (aIsUnlocked !== bIsUnlocked) {
+          return aIsUnlocked ? -1 : 1;
+        }
+
+        // 2. 稀有度高的優先
+        const rarityOrder = { '超稀有': 3, '稀有': 2, '普通': 1 };
+        const aRarity = rarityOrder[a.rarity] || 0;
+        const bRarity = rarityOrder[b.rarity] || 0;
+        if (aRarity !== bRarity) {
+          return bRarity - aRarity;
+        }
+        
+        // 3. 最後依照 ID 排序
+        return (a.id || 0) - (b.id || 0);
+      });
+
+      let unlockedCount = 0;
+      sortedCards.forEach(card => {
+        // 搜尋單字或中文
+        const combinedText = (card.word + card.zh).toLowerCase();
+        const matchSearch = combinedText.includes(search);
+        // 篩稀有度
+        const matchRarity = (filterRarity === 'all' || card.rarity === filterRarity);
+        // 篩類別
+        const matchCategory = (filterCategory === 'all' || card.category === filterCategory);
+
+        const isUnlocked = LinkageSystem.cards.isCardOwned(card.word);
+        const isNewCardFlag = recentlyObtainedCards.includes(card.word);
+
+        let shardDisplayHtml = '';
+        if (isUnlocked) {
+          shardDisplayHtml = `<div class="shard-count shard-unlocked">✔</div>`;
+        } else {
+          shardDisplayHtml = `<div class="shard-count">未解鎖</div>`;
+        }
+
+        // 篩選已有卡片 (此功能已移除，改為標記)
+        const matchOwned = !showOwnedOnly || isUnlocked;
+
+        if (!(matchSearch && matchRarity && matchCategory && matchOwned)) return;
+
+        // CSS class
+        const rarityClass = card.rarity === '普通' ? 'common'
+                             : card.rarity === '稀有' ? 'rare' : 'epic';
+
+        const div = document.createElement("div");
+        div.className = `card ${rarityClass}${isUnlocked ? ' unlocked' : ' locked'}`;
+        div.setAttribute('data-word', card.word); // 添加data-word屬性用於定位
+        
+        // 如果是新卡片，添加發光效果
+        if (recentlyObtainedCards.includes(card.word) && isUnlocked) {
+          div.classList.add('new-card-glow');
+        }
+
+        // 根據稀有度決定邊框底圖
+        if (card.rarity === '普通') {
+          div.style.backgroundImage = "url('img/border/common.jpg')";
+        } else if (card.rarity === '稀有') {
+          div.style.backgroundImage = "url('img/border/rare.png')";
+        } else if (card.rarity === '超稀有') {
+          div.style.backgroundImage = "url('img/border/epic.png')";
+        }
+
+        // 星星圖示
+        let starIcons = '';
+        if (card.rarity === '普通') starIcons = '★';
+        else if (card.rarity === '稀有') starIcons = '★★';
+        else if (card.rarity === '超稀有') starIcons = '★★★';
+
+        // 準備卡片內容
+        let mediaContent = '';
+        
+        // 檢查是否有影片（包括 video 和 video_url 屬性）
+        const hasVideo = card.video || card.video_url;
+        
+        if (hasVideo) {
+          // 有影片的卡片：只有已解鎖的卡片才顯示影片按鈕
+          const videoUrl = card.video || card.video_url;
+          if (isUnlocked) {
+            // 已解鎖：顯示圖片 + 影片按鈕
+            mediaContent = `
+              <div class="media-container" style="position: relative; width: 100%; height: 50%;">
+                <img class="card-media" src="${card.image}" alt="${card.word}">
+                <div class="video-button" onclick="event.stopPropagation(); playVideo('${videoUrl.replace(/'/g, "\\'")}', '${card.word}')">
+                  <div class="video-icon">▶</div>
+                </div>
+              </div>
+            `;
+          } else {
+            // 未解鎖：只顯示圖片，不顯示影片按鈕
+            mediaContent = `<img class="card-media" src="${card.image}" alt="${card.word}">`;
+          }
+        } else {
+          // 沒有影片的卡片：只顯示圖片
+          mediaContent = `<img class="card-media" src="${card.image}" alt="${card.word}">`;
+        }
+
+        let ownedStampHtml = '';
+        if (isUnlocked) {
+          ownedStampHtml = '<div class="owned-stamp">✔ 已擁有</div>';
+        }
+
+        // 準備稀有度圖標
+        let rarityIconHtml = '';
+        let rarityText = '';
+        if (card.rarity === '普通') {
+          rarityText = 'A';
+        } else if (card.rarity === '稀有') {
+          rarityText = 'R';
+        } else if (card.rarity === '超稀有') {
+          rarityText = 'SSR';
+        }
+        rarityIconHtml = `<div class="rarity-icon ${rarityClass}">${rarityText}</div>`;
+
+        let cardContent = `
+          ${rarityIconHtml}
+          ${mediaContent}
+          <div class="stars">${starIcons}</div>
+          <div class="label">
+            <div class="chinese-text">${card.zh}</div>
+            <div class="english-text">${card.word}</div>
+          </div>
+          <div class="category-tag">類別：${card.category}</div>
+          <div class="description-tag">${card.description}</div>
+          ${shardDisplayHtml}
+        `;
+        
+        // 如果是新卡片且已解鎖，添加NEW標籤
+        if (recentlyObtainedCards.includes(card.word) && isUnlocked) {
+          cardContent = `
+            <div class="new-card-badge">NEW!</div>
+            ${cardContent}
+          `;
+        }
+
+        div.innerHTML = cardContent;
+
+        // 若已解鎖，才綁點擊事件開 Modal
+        if (isUnlocked) {
+          div.onclick = (event) => {
+            // 檢查是否點擊的是影片按鈕，如果是則不處理（讓影片按鈕自己處理）
+            if (event.target.closest('.video-button')) {
+              return;
+            }
+            
+            // 所有卡片都打開 Modal
+            openModal(card);
+          };
+          unlockedCount++;
+        }
+        
+        // 為影片添加點擊事件（阻止冒泡到卡片點擊事件）
+        const videoElement = div.querySelector('video');
+        if (videoElement) {
+          videoElement.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (videoElement.paused) {
+              videoElement.play();
+            } else {
+              videoElement.pause();
+            }
+          });
+        }
+
+        grid.appendChild(div);
+      });
+
+      document.getElementById("progress").textContent = `已解鎖：${unlockedCount} / ${window.allCards.length}`;
+      
+      // 更新卡片統計（移除重複呼叫，避免效能問題）
+      // updateCardStats();
+
+      // 為每張卡片添加右鍵選單
+      document.querySelectorAll('.card').forEach(cardElement => {
+        cardElement.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+          
+          const cardWord = this.getAttribute('data-word');
+          const card = window.allCards.find(c => c.word === cardWord);
+          
+          if (!card) return;
+          
+          // 如果是生日蛋糕卡片且未設定生日，顯示生日設定選項
+          if (card.word === 'Birthday Cake' && !BirthdaySystem.hasBirthdaySet()) {
+            showBirthdayContextMenu(e, card);
+          }
+        });
+      });
+    }
+
+    // -------- 4.5. 切換已有卡片篩選 --------
+    function toggleOwnedFilter() {
+      const button = document.getElementById("ownedFilter");
+      button.classList.toggle("active");
+      renderCards();
+    }
+
+    // -------- 5. Modal 的開啟/關閉 邏輯 --------
+    function openModal(card) {
+      // 移除該卡片的 NEW 標記
+      removeNewCardMarker(card.word);
+      
+      // 移除碎片系統相關程式碼
+      const isUnlocked = LinkageSystem.cards.isCardOwned(card.word);
+
+      // 更新 Modal 內容
+      const modalImg = document.getElementById("modalImg");
+      // 只顯示圖片，不顯示影片
+      modalImg.outerHTML = `<img id="modalImg" class="card-media" src="${card.image}" alt="${card.word}">`;
+
+      let starIcons = '';
+      if (card.rarity === '普通') starIcons = '★';
+      else if (card.rarity === '稀有') starIcons = '★★';
+      else if (card.rarity === '超稀有') starIcons = '★★★';
+      document.getElementById("modalStars").textContent = starIcons;
+
+      // 更新Modal中的中文和英文文本
+      const modalLabel = document.getElementById("modalLabel");
+      modalLabel.innerHTML = `
+        <div class="chinese-text">${card.zh}</div>
+        <div class="english-text">${card.word}</div>
+      `;
+      
+      document.getElementById("modalCategory").textContent = `類別：${card.category}`;
+      
+              // Modal中的解鎖狀態顯示
+        let modalShardText = isUnlocked ? '已解鎖' : '未解鎖';
+        // 注意：已移除 modalShards 元素，所以這行可以刪除
+      
+      // 添加Modal中的稀有度圖標
+      const modalCard = document.querySelector('#modal .card');
+      if (modalCard) {
+        // 移除現有的稀有度圖標
+        const existingIcon = modalCard.querySelector('.rarity-icon');
+        if (existingIcon) {
+          existingIcon.remove();
+        }
+        
+        // 添加新的稀有度圖標
+        let rarityText = '';
+        if (card.rarity === '普通') {
+          rarityText = 'A';
+        } else if (card.rarity === '稀有') {
+          rarityText = 'R';
+        } else if (card.rarity === '超稀有') {
+          rarityText = 'SSR';
+        }
+        
+        const rarityIcon = document.createElement('div');
+        rarityIcon.className = `rarity-icon ${rarityClass}`;
+        rarityIcon.textContent = rarityText;
+        modalCard.appendChild(rarityIcon);
+      }
+
+      // 如果 card 裡面有 audio 屬性，就播放音檔；否則用語音朗讀
+      const modalAudio = document.getElementById("modalAudio");
+      const soundBtn = document.getElementById("modalSoundBtn");
+      if (card.audio) {
+        modalAudio.src = card.audio;
+        soundBtn.onclick = playModalAudio;
+      } else {
+        modalAudio.src = "";
+        soundBtn.onclick = () => {
+          // 使用新的發音系統
+          SoundSystem.speech.speakWord(card.word);
+          setTimeout(() => {
+            SoundSystem.speech.speak(card.zh, { lang: 'zh-TW' });
+          }, 500);
+        };
+      }
+      soundBtn.style.display = 'inline-flex';
+
+      // 移除分解功能（碎片系統已移除）
+
+      document.getElementById("overlay").style.display = "block";
+      document.getElementById("modal").classList.add("show");
+    }
+
+
+
+    function closeModal() {
+      // 停止Modal中的影片播放
+      const modalVideo = document.querySelector('#modal video');
+      if (modalVideo) {
+        modalVideo.pause();
+        modalVideo.currentTime = 0;
+      }
+      
+      document.getElementById("modal").classList.remove("show");
+      document.getElementById("overlay").style.display = "none";
+      // 使用新的發音系統停止發音
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    }
+
+    function playModalAudio() {
+      const audioElem = document.getElementById("modalAudio");
+      if (audioElem && audioElem.src) {
+        audioElem.play();
+      }
+    }
+
+    // -------- 6. 頁面載入時先初始化 「類別選單」 並 renderCards() --------
+    // 移除重複的 window.addEventListener("load")，統一在下方處理
+
+    // 設置 Modal 事件
+    function setupModalEvents() {
+      const overlay = document.getElementById('overlay');
+      const modal = document.getElementById('modal');
+      
+      if (overlay) {
+        // 點擊背景遮罩關閉 Modal
+        overlay.addEventListener('click', function(e) {
+          if (e.target === overlay) {
+            closeModal();
+          }
+        });
+      }
+      
+      if (modal) {
+        // 點擊 Modal 內容區域不關閉
+        modal.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      }
+      
+      // ESC 鍵關閉 Modal
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closeModal();
+        }
+      });
+    }
+
+    // -------- 7. 碎片系統相關函數 --------
+    // 已刪除 toggleShardInfo 函數，因為不再需要切換說明顯示
+
+    // -------- 8. 新卡片系統相關函數 --------
+    function clearNewCardMarkers() {
+      // 清除最近獲得的卡片標記
+      localStorage.removeItem('recentlyObtainedCards');
+      localStorage.removeItem('newCardTimestamps');
+      recentlyObtainedCards = [];
+      renderCards();
+    }
+
+    function addNewCard(cardWord) {
+      // 添加新卡片到最近獲得列表
+      let recentCards = JSON.parse(localStorage.getItem('recentlyObtainedCards') || '[]');
+      let cardTimestamps = JSON.parse(localStorage.getItem('newCardTimestamps') || '{}');
+      
+      if (!recentCards.includes(cardWord)) {
+        recentCards.push(cardWord);
+        // 記錄獲得時間戳
+        cardTimestamps[cardWord] = Date.now();
+        
+        // 只保留最近20張新卡片
+        if (recentCards.length > 20) {
+          const oldestCard = recentCards.shift();
+          delete cardTimestamps[oldestCard];
+        }
+        
+        localStorage.setItem('recentlyObtainedCards', JSON.stringify(recentCards));
+        localStorage.setItem('newCardTimestamps', JSON.stringify(cardTimestamps));
+      }
+    }
+
+    // 移除單張卡片的 NEW 標記
+    function removeNewCardMarker(cardWord) {
+      let recentCards = JSON.parse(localStorage.getItem('recentlyObtainedCards') || '[]');
+      let cardTimestamps = JSON.parse(localStorage.getItem('newCardTimestamps') || '{}');
+      
+      // 如果卡片在新卡片列表中，則移除它
+      if (recentCards.includes(cardWord)) {
+        recentCards = recentCards.filter(card => card !== cardWord);
+        delete cardTimestamps[cardWord];
+        
+        localStorage.setItem('recentlyObtainedCards', JSON.stringify(recentCards));
+        localStorage.setItem('newCardTimestamps', JSON.stringify(cardTimestamps));
+        
+        // 更新頁面變數
+        recentlyObtainedCards = recentCards;
+        
+        // 重新渲染卡片以移除 NEW 標記
+        renderCards();
+        
+        console.log(`✅ 已移除「${cardWord}」的 NEW 標記`);
+      }
+    }
+
+    // 自動清除新卡片標記（10分鐘後）
+    function autoClearNewCards() {
+      const cardTimestamps = JSON.parse(localStorage.getItem('newCardTimestamps') || '{}');
+      const now = Date.now();
+      const tenMinutes = 10 * 60 * 1000; // 10分鐘
+      
+      let hasExpiredCards = false;
+      const expiredCards = [];
+      
+      // 檢查是否有過期的卡片
+      Object.keys(cardTimestamps).forEach(cardWord => {
+        const timestamp = cardTimestamps[cardWord];
+        if (now - timestamp > tenMinutes) {
+          expiredCards.push(cardWord);
+          delete cardTimestamps[cardWord];
+          hasExpiredCards = true;
+        }
+      });
+      
+      // 如果有過期卡片，更新 localStorage
+      if (hasExpiredCards) {
+        let recentCards = JSON.parse(localStorage.getItem('recentlyObtainedCards') || '[]');
+        recentCards = recentCards.filter(card => !expiredCards.includes(card));
+        
+        localStorage.setItem('recentlyObtainedCards', JSON.stringify(recentCards));
+        localStorage.setItem('newCardTimestamps', JSON.stringify(cardTimestamps));
+        
+        // 更新頁面變數
+        recentlyObtainedCards = recentCards;
+        
+        // 只在有過期卡片時才重新渲染，避免不必要的重複渲染
+        if (expiredCards.length > 0) {
+          renderCards();
+          console.log(`⏰ 已移除 ${expiredCards.length} 張過期的新卡片標記：`, expiredCards);
+        }
+      }
+      
+      // 移除頻繁的 console.log，避免效能問題
+      // console.log('⏰ 檢查新卡片標記完成');
+    }
+
+    // 檢查卡片是否為新卡片（10分鐘內）
+    function isNewCard(cardWord) {
+      const cardTimestamps = JSON.parse(localStorage.getItem('newCardTimestamps') || '{}');
+      const timestamp = cardTimestamps[cardWord];
+      
+      if (!timestamp) return false;
+      
+      const now = Date.now();
+      const tenMinutes = 10 * 60 * 1000; // 10分鐘
+      
+      return (now - timestamp) <= tenMinutes;
+    }
+
+    // 獲取效果類型的中文名稱
+    function getEffectTypeName(effectType) {
+      const typeNames = {
+        'time_extend': '時間延長',
+        'time_freeze': '時間暫停',
+        'hint': '提示輔助',
+        'shield': '護盾保護',
+        'energy_restore': '能量恢復',
+        'combo_protect': '連擊保護',
+        'score_multiply': '分數加倍',
+        'skip_level': '跳過關卡'
+      };
+      return typeNames[effectType] || '未知效果';
+    }
+
+    // 調試信息
+    function debugNewCardInfo() {
+      console.log('🔍 調試信息：');
+      console.log('recentlyObtainedCards:', recentlyObtainedCards);
+      console.log('ownedCards keys:', Object.keys(ownedCards));
+      console.log('localStorage recentlyObtainedCards:', localStorage.getItem('recentlyObtainedCards'));
+      console.log('ownedCards 完整內容:', ownedCards);
+      
+      // 測試卡片檢查已移除
+      
+      // 顯示時間戳信息
+      const cardTimestamps = JSON.parse(localStorage.getItem('newCardTimestamps') || '{}');
+      console.log('newCardTimestamps:', cardTimestamps);
+      
+      // 顯示每張新卡片的剩餘時間
+      const now = Date.now();
+      const tenMinutes = 10 * 60 * 1000;
+      Object.keys(cardTimestamps).forEach(cardWord => {
+        const timestamp = cardTimestamps[cardWord];
+        const elapsed = now - timestamp;
+        const remaining = tenMinutes - elapsed;
+        const remainingMinutes = Math.max(0, Math.floor(remaining / 60000));
+        const remainingSeconds = Math.max(0, Math.floor((remaining % 60000) / 1000));
+        console.log(`⏰ ${cardWord}: 剩餘 ${remainingMinutes}分${remainingSeconds}秒`);
+      });
+    }
+
+    // 更新卡片統計
+    function updateCardStats() {
+      const totalCards = window.allCards.length;
+      const ownedCards = LinkageSystem.cards.getOwnedCards();
+      const unlockedCards = Object.keys(ownedCards).length;
+      
+      // 更新頁面頂部的星星顯示
+      const totalStars = parseInt(localStorage.getItem('totalStars') || '0');
+      const starsDisplay = document.getElementById('totalStarsCount');
+      if (starsDisplay) {
+        starsDisplay.textContent = `⭐ ${totalStars}`;
+      }
+      
+      // 更新進度顯示
+      const progressText = `已解鎖：${unlockedCards} / ${totalCards}`;
+      document.getElementById("progress").textContent = progressText;
+    }
+
+    // -------- 9. YouTube 影片相關函數 --------
+    
+    // 播放影片函數
+    function playVideo(videoUrl, cardWord) {
+      if (!videoUrl) {
+        alert('沒有影片連結');
+        return;
+      }
+      
+      // 檢查是否為 YouTube 連結
+      if (/youtu(be\.com|\.be)/.test(videoUrl)) {
+        const youtubeId = extractYouTubeId(videoUrl);
+        if (youtubeId) {
+          // 開啟 YouTube 影片 Modal
+          openVideoModal(youtubeId, cardWord, 'youtube');
+        } else {
+          alert('YouTube 連結格式錯誤');
+        }
+      } else {
+        // 本地 MP4 影片
+        openVideoModal(videoUrl, cardWord, 'mp4');
+      }
+    }
+    
+    // 開啟影片 Modal
+    function openVideoModal(videoSource, cardWord, type) {
+      // 創建影片 Modal
+      const modal = document.createElement('div');
+      modal.className = 'video-modal';
+      modal.innerHTML = `
+        <div class="video-modal-content">
+          <div class="video-modal-header">
+            <h3>${cardWord}</h3>
+            <button class="video-modal-close" onclick="closeVideoModal()">×</button>
+          </div>
+          <div class="video-modal-body">
+            ${type === 'youtube' 
+              ? `<iframe src="https://www.youtube.com/embed/${videoSource}?controls=1&showinfo=1&rel=0&modestbranding=1" 
+                   frameborder="0" allow="encrypted-media" allowfullscreen></iframe>`
+              : `<video controls>
+                   <source src="${videoSource}" type="video/mp4">
+                   您的瀏覽器不支援影片播放
+                 </video>`
+            }
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // 點擊背景關閉 Modal
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeVideoModal();
+        }
+      });
+      
+      // ESC 鍵關閉 Modal
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeVideoModal();
+        }
+      });
+    }
+    
+    // 關閉影片 Modal
+    function closeVideoModal() {
+      const modal = document.querySelector('.video-modal');
+      if (modal) {
+        modal.remove();
+      }
+    }
+    
+    function extractYouTubeId(url) {
+      const patterns = [
+        /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/,
+        /youtube\.com\/embed\/([\w-]{11})/,
+        /youtu\.be\/([\w-]{11})/
+      ];
+      
+      for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+          return match[1];
+        }
+      }
+      return null;
+    }
+
+
+
+    // =================== 測試者整合程式碼 ===================
+    // 如果要用測試者指令（例如：加星、解鎖所有），可以在 localStorage 裡放 testerInstructions
+    // { "addStars": true, "unlockAllCards": true, "testerMode": true }
+    let stars = parseInt(localStorage.getItem("totalStars") || "0");
+
+    function updateStars() {
+      // 如果有 #stars 或 #totalStarsCount 元素，就更新它
+      const el = document.getElementById("stars") || document.getElementById("totalStarsCount");
+      if (el) el.textContent = stars;
+      localStorage.setItem("totalStars", stars);
+    }
+
+    window.addEventListener("load", () => {
+      updateStars();
+      
+      // 移除重複的初始化邏輯，讓 waitForAllCards() 統一處理
+      // if (!window.allCards || window.allCards.length === 0) {
+      //   console.error('警告：allCards 為空陣列，可能是 cards.js 載入失敗');
+      //   waitForAllCards();
+      // } else {
+      //   initializePage();
+      // }
+    });
+
+
+
+    console.log('allCards 長度:', window.allCards.length);
+
+    // 移除重複的初始化邏輯，避免多次呼叫 initializePage()
+    // if (!window.allCards || window.allCards.length === 0) {
+    //   console.error('警告：allCards 為空陣列，可能是 cards.js 載入失敗');
+    //   waitForAllCards();
+    // } else {
+    //   initializePage();
+    // }
+
+    function initializePage() {
+      // 初始化音效系統
+      if (typeof SoundSystem !== 'undefined') {
+        SoundSystem.speech.init();
+      }
+      
+      // 初始化頁籤按鈕
+      document.querySelectorAll('.tab-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+          const clickedButton = e.currentTarget;
+          if (clickedButton.classList.contains('active')) {
+            return; // 如果點擊的已經是啟用狀態，則不重複執行
+          }
+          document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+          clickedButton.classList.add('active');
+          renderCards();
+        });
+      });
+      
+      // 初始化新卡片系統
+      autoClearNewCards();
+      
+      // 設置定時器，每分鐘檢查一次過期的新卡片標記
+      setInterval(autoClearNewCards, 60 * 1000); // 每分鐘檢查一次
+      
+      // 初始化頁面
+      initCategoryOptions();
+      renderCards();
+      // updateShardStats(); // 已移除碎片系統
+      
+      // 設置 Modal 事件
+      setupModalEvents();
+      
+      // 檢查並突出顯示新解鎖的卡片
+      setTimeout(() => {
+        highlightNewCards();
+      }, 500); // 延遲500ms確保卡片已渲染完成
+      
+      // 調試信息
+      debugNewCardInfo();
+      
+      // 如果有新卡片，顯示提示
+      if (recentlyObtainedCards.length > 0) {
+        console.log(`🎉 發現 ${recentlyObtainedCards.length} 張新卡片！`);
+      } else {
+        console.log('📝 目前沒有新卡片標記');
+      }
+    }
+
+    // -------- 9. YouTube 影片相關函數 --------
+    
+    // 新增：檢查並突出顯示新解鎖的卡片
+    function highlightNewCards() {
+      const newCards = JSON.parse(localStorage.getItem('recentlyObtainedCards') || '[]');
+      if (newCards.length === 0) return;
+      
+      // 找到最新解鎖的卡片元素
+      const latestCard = newCards[newCards.length - 1];
+      const cardElement = document.querySelector(`[data-word="${latestCard}"]`);
+      
+      if (cardElement) {
+        // 移除自動滾動，只保留閃爍動畫效果
+        // cardElement.scrollIntoView({ 
+        //   behavior: 'smooth', 
+        //   block: 'center' 
+        // });
+        
+        // 添加閃爍動畫效果
+        cardElement.style.animation = 'newCardHighlight 2s ease-in-out infinite';
+        
+        // 2秒後移除動畫
+        setTimeout(() => {
+          cardElement.style.animation = '';
+        }, 2000);
+        
+        console.log(`🎯 新解鎖的卡片：${latestCard}（已添加高亮效果）`);
+      }
+    }
+    
+    // 新增：新卡片高亮動畫
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes newCardHighlight {
+        0%, 100% { 
+          transform: scale(1);
+          box-shadow: 0 0 16px #00ffff55, 0 0 32px #a259ff33;
+        }
+        50% { 
+          transform: scale(1.1);
+          box-shadow: 0 0 32px #00ffff, 0 0 48px #a259ffcc, 0 0 20px #ffd700;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // 輔助函數：判斷是否為SSR
+    function isSSR(card) {
+      return card.rarity === '超稀有' || card.rarity === '節日限定';
+    }
+
+    // 碎片轉換星星功能已移除（碎片系統已移除）
+
+    // 顯示生日設定右鍵選單
+    function showBirthdayContextMenu(e, card) {
+      // 移除現有的右鍵選單
+      const existingMenu = document.querySelector('.context-menu');
+      if (existingMenu) {
+        existingMenu.remove();
+      }
+      
+      const menu = document.createElement('div');
+      menu.className = 'context-menu';
+      menu.style.cssText = `
+        position: fixed;
+        top: ${e.clientY}px;
+        left: ${e.clientX}px;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        padding: 8px 0;
+        min-width: 200px;
+      `;
+      
+      menu.innerHTML = `
+        <div style="padding: 8px 16px; border-bottom: 1px solid #eee; font-weight: bold; color: #333;">
+          🎂 生日蛋糕卡片
+        </div>
+        <div style="padding: 8px 16px; cursor: pointer; transition: background 0.2s;" 
+             onmouseover="this.style.background='#f5f5f5'" 
+             onmouseout="this.style.background='transparent'"
+             onclick="BirthdaySystem.showBirthdaySetupDialog(); this.parentElement.remove();">
+          📅 設定生日日期
+        </div>
+        <div style="padding: 8px 16px; color: #666; font-size: 12px;">
+          設定後在生日當天會自動獲得此卡片
+        </div>
+      `;
+      
+      document.body.appendChild(menu);
+      
+      // 點擊其他地方關閉選單
+      setTimeout(() => {
+        document.addEventListener('click', function closeMenu() {
+          menu.remove();
+          document.removeEventListener('click', closeMenu);
+        });
+      }, 100);
+    }
+
+    // 在頁面載入時初始化生日系統
+    document.addEventListener('DOMContentLoaded', function() {
+      // 檢查並顯示生日祝福
+      if (typeof BirthdaySystem !== 'undefined') {
+        BirthdaySystem.checkAndGiveBirthdayCard();
+      }
+    });
+
+    console.log('allCards 長度:', window.allCards.length);
+
+    // 移除重複的初始化邏輯
+    // if (!window.allCards || window.allCards.length === 0) {
+    //   console.error('警告：allCards 為空陣列，可能是 cards.js 載入失敗');
+    //   waitForAllCards();
+    // } else {
+    //   initializePage();
+    // }
+
+    // 清理無效的 ownedCards 資料
+    function cleanOwnedCards() {
+        const ownedCards = JSON.parse(localStorage.getItem('ownedCards') || '{}');
+        const allCardWords = window.allCards.map(card => card.word);
+        
+        // 只保留在 allCards 中存在的卡片
+        const cleanedOwnedCards = {};
+        Object.keys(ownedCards).forEach(word => {
+            if (allCardWords.includes(word)) {
+                cleanedOwnedCards[word] = ownedCards[word];
+            } else {
+                console.log('移除無效卡片:', word);
+            }
+        });
+        
+        localStorage.setItem('ownedCards', JSON.stringify(cleanedOwnedCards));
+        console.log('清理完成，有效卡片數量:', Object.keys(cleanedOwnedCards).length);
+        
+        // 重新渲染頁面
+        if (typeof renderCards === 'function') {
+            renderCards();
+        }
+    }
+
+    // 移除自動執行清理，避免在頁面載入時就清空卡片資料
+    // cleanOwnedCards();
+
+    // 測試卡片已清理完成
+  </script>
+</body>
+</html>
