@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>英打小英雄 - 星座挑戰</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- 引入 Google 字型 -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* === 背景：星空與漸層 === */
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: auto;
+      font-family: 'Orbitron', sans-serif;
+      color: #fff;
+      background: radial-gradient(circle at center, #001022 0%, #000010 100%);
+    }
+    /* 星星粒子 */
+    #starfield {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    /* 主要容器：添加半透明背景和模糊效果 */
+    #container {
+      position: relative;
+      z-index: 1;
+      max-width: 500px;
+      margin: 40px auto;
+      padding: 20px;
+      background: rgba(0, 0, 30, 0.6);
+      border-radius: 16px;
+      box-shadow: 0 0 20px rgba(0, 204, 255, 0.4);
+      backdrop-filter: blur(8px);
+    }
+    /* 返回首頁按鈕 */
+    .home-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: #0ff;
+      color: #000;
+      font-weight: bold;
+      padding: 8px 16px;
+      border-radius: 8px;
+      box-shadow: 0 0 8px #0ff;
+      text-decoration: none;
+      z-index: 2;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-family: 'Orbitron', sans-serif;
+    }
+    .home-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 12px #0ff;
+    }
+    /* 總星星顯示 */
+    #totalStars {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 51, 102, 0.7);
+      padding: 6px 12px;
+      border-radius: 12px;
+      box-shadow: 0 0 8px #0ff;
+      font-size: 1rem;
+      z-index: 2;
+      font-family: 'Orbitron', sans-serif;
+    }
+    /* 標題 */
+    h1 {
+      margin-top: 60px;
+      font-size: 2rem;
+      letter-spacing: 1px;
+      text-shadow: 0 0 8px #0ff, 0 0 16px #00ffff;
+      z-index: 2;
+      font-family: 'Orbitron', sans-serif;
+    }
+    /* 題數顯示 */
+    #questionCount {
+      margin: 10px auto;
+      font-size: 1.2rem;
+      color: #00ffff;
+      text-align: center;
+      z-index: 2;
+      font-family: 'Orbitron', sans-serif;
+    }
+    /* 單字顯示 */
+    #wordDisplay {
+      margin: 20px auto;
+      font-size: 2.8rem;
+      font-weight: bold;
+      color: #ffcc00;
+      text-shadow: 0 0 8px #ffaa00;
+      animation: glow 2s ease-in-out infinite alternate;
+      z-index: 2;
+      font-family: 'Orbitron', sans-serif;
+    }
+    @keyframes glow {
+      from { text-shadow: 0 0 8px #ffaa00; }
+      to { text-shadow: 0 0 16px #ffd700; }
+    }
+    /* 計時器 */
+    #timerDisplay {
+      font-size: 1.1rem;
+      color: #00ffff;
+      margin-bottom: 15px;
+      z-index: 2;
+      font-family: 'Orbitron', sans-serif;
+    }
+    #timerDisplay.danger { animation: flash 1s infinite; }
+    @keyframes flash { 0%,100% { color: #00ffff; } 50% { color: #ff0000; } }
+    /* 輸入框 */
+    #answerInput {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 1.1rem;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 2px solid rgba(0, 204, 255, 0.6);
+      width: 80%;
+      max-width: 400px;
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      box-shadow: 0 0 6px #00ffff80;
+      text-align: center;
+      outline: none;
+      margin-bottom: 15px;
+    }
+    #answerInput:focus {
+      border-color: #00ffff;
+      box-shadow: 0 0 12px #00ffff;
+    }
+    /* 星星顯示 (隱藏中) */
+    #stars {
+      display: none; /* 遊戲過程中不顯示星星圖示 */
+    }
+    .star-icon, .lost-star {
+      display: none; /* 隱藏所有單顆星星的圖示 */
+    }
+    /* 回饋訊息 */
+    #feedback {
+      height: 30px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin: 12px 0;
+      color: #ff6666;
+      z-index: 2;
+      font-family: 'Orbitron', sans-serif;
+    }
+    /* 按鈕列 */
+    .btn-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+      z-index: 2;
+    }
+    button {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.95rem;
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(135deg, #0099cc, #003366);
+      color: #fff;
+      font-weight: bold;
+      box-shadow: 0 0 8px #00ffff50;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 12px #00ffff;
+    }
+    #speakBtn { background: #ffcc00; color: #000; }
+    /* 模態視窗 */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+    }
+    .modal-content {
+      background: rgba(0, 0, 50, 0.9);
+      padding: 30px;
+      border-radius: 16px;
+      color: #ffdd55;
+      max-width: 500px;
+      width: 85%;
+      text-align: center;
+      box-shadow: 0 0 20px #00ffff;
+      font-family: 'Orbitron', sans-serif;
+      margin: 20px;
+    }
+    .modal-content h2 {
+      margin-bottom: 15px;
+      color: #00ffff;
+      text-shadow: 0 0 8px #0ff;
+      font-size: 1.5rem;
+      font-family: 'Orbitron', sans-serif;
+    }
+    .modal-content p {
+      margin: 8px 0;
+      font-size: 0.95rem;
+      font-family: 'Orbitron', sans-serif;
+    }
+    .modal-content button {
+      margin-top: 12px;
+      background: #0099cc;
+      color: #001122;
+      box-shadow: 0 0 8px #00ffff50;
+      padding: 8px 16px;
+      border-radius: 10px;
+      transition: transform 0.2s;
+      font-family: 'Orbitron', sans-serif;
+    }
+    .modal-content button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 12px #00ffff;
+    }
+    .modal-content ul {
+      list-style: none;
+      padding: 0;
+      max-height: 140px;
+      overflow-y: auto;
+      margin: 15px 0;
+      text-align: left;
+      font-size: 0.9rem;
+      font-family: 'Roboto Mono', monospace;
+    }
+    .modal-content ul li { margin: 6px 0; }
+  </style>
+</head>
+<body>
+  <canvas id="starfield"></canvas>
+  <div id="container">
+    <a href="index.html" class="home-btn">← 返回首頁</a>
+    <div id="totalStars">總星星：<span id="totalStarCount">0</span> ⭐</div>
+    <h1>🧠 星座挑戰：<span id="categoryName"></span></h1>
+    <div id="questionCount">第 <span id="currentQuestion">0</span> 題 / 20 題</div>
+    <div id="wordDisplay">準備中...</div>
+    <div id="timerDisplay">⏱ 時間：<span id="timeLeft">30</span> 秒</div>
+    <input type="text" id="answerInput" placeholder="請輸入英文..." autocomplete="off" />
+    <div id="stars"></div>
+    <div id="feedback"></div>
+    <div class="btn-row">
+      <button onclick="checkAnswer()">送出</button>
+      <button onclick="nextWord()">跳過</button>
+      <button id="speakBtn" onclick="speakCurrentWord()">🔈 發音</button>
+      <button onclick="restartGame()">🔁 重玩</button>
+    </div>
+
+    <!-- 結算面板 -->
+    <div id="resultModal" class="modal">
+      <div class="modal-content">
+        <h2>關卡結算</h2>
+        <p>★ 本次獲得星星：<span id="sessionStars">0</span></p>
+        <p>✅ 答對題數：<span id="sessionCorrect">0</span></p>
+        <p>❌ 答錯題數：<span id="sessionWrong">0</span></p>
+        <p>⭐ 累積總星星：<span id="sessionTotal">0</span></p>
+        <button id="wrongBtn" onclick="showWrongModal()">錯題複習</button>
+        <button onclick="restartGame()">重新開始</button>
+        <button onclick="goHome()">返回首頁</button>
+      </div>
+    </div>
+    <!-- 錯題複習面板 -->
+    <div id="wrongModal" class="modal">
+      <div class="modal-content">
+        <h2>錯題複習</h2>
+        <ul id="wrongItems"></ul>
+        <button onclick="closeWrongModal()">關閉</button>
+      </div>
+    </div>
+
+    <audio id="alertSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_7813880e63.mp3"></audio>
+  </div>
+
+  <script>
+    // === 星星背景生成 ===
+    const starCanvas = document.getElementById('starfield');
+    const ctx = starCanvas.getContext('2d');
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    starCanvas.width = width;
+    starCanvas.height = height;
+    const starsBg = [];
+    function initStars() {
+      starsBg.length = 0;
+      for (let i = 0; i < 200; i++) {
+        starsBg.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          r: Math.random() * 1.2 + 0.3,
+          alpha: Math.random(),
+          twinkle: Math.random() * 5
+        });
+      }
+    }
+    function drawStars() {
+      ctx.clearRect(0, 0, width, height);
+      starsBg.forEach(s => {
+        s.twinkle += 0.02;
+        s.alpha = Math.abs(Math.sin(s.twinkle));
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+        ctx.fill();
+      });
+      requestAnimationFrame(drawStars);
+    }
+    window.addEventListener('resize', () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      starCanvas.width = width;
+      starCanvas.height = height;
+      initStars();
+    });
+    initStars();
+    drawStars();
+
+    // --- TTS voices 載入 ---
+    let voices = [];
+    function loadVoices() {
+      voices = window.speechSynthesis.getVoices();
+    }
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = loadVoices;
+    }
+    loadVoices();
+
+    // --- 字庫資料 ---
+    const vocabData = {
+      aries: [
+    { zh: "我", en: "I" }, { zh: "你；你們", en: "you" }, { zh: "他", en: "he" }, { zh: "她", en: "she" },
+    { zh: "牠；它", en: "it" }, { zh: "我們", en: "we" }, { zh: "他們", en: "they" }, { zh: "男孩", en: "boy" },
+    { zh: "女孩", en: "girl" }, { zh: "嬰兒", en: "baby" }, { zh: "一個", en: "an" }, { zh: "這 那", en: "the" },
+    { zh: "這", en: "this" }, { zh: "那", en: "that" }, { zh: "這些", en: "these" }, { zh: "那些", en: "those" },
+    { zh: "是；成為", en: "be" }, { zh: "助動詞", en: "do" }, { zh: "爸爸", en: "father" }, { zh: "媽媽", en: "mother" }
+
+    ],
+     taurus: [
+    { zh: "兒子", en: "son" }, { zh: "女兒", en: "daughter" }, { zh: "(外)祖母", en: "grandmother" }, { zh: "(外)祖父", en: "grandfather" },
+    { zh: "哥哥；弟弟", en: "brother" }, { zh: "姊姊；妹妹", en: "sister" }, { zh: "零", en: "zero" }, { zh: "一", en: "one" },
+    { zh: "二", en: "two" }, { zh: "三", en: "three" }, { zh: "四", en: "four" }, { zh: "五", en: "five" },
+    { zh: "六", en: "six" }, { zh: "七", en: "seven" }, { zh: "八", en: "eight" }, { zh: "九", en: "nine" },
+    { zh: "十", en: "ten" }, { zh: "十一", en: "eleven" }, { zh: "十二", en: "twelve" }, { zh: "學校", en: "school" }
+  ],
+gemini: [
+    { zh: "班級；課程", en: "class" }, { zh: "學生", en: "student" }, { zh: "老師", en: "teacher" }, { zh: "朋友", en: "friend" },
+    { zh: "書", en: "book" }, { zh: "椅子", en: "chair" }, { zh: "書桌", en: "desk" }, { zh: "桌子", en: "table" },
+    { zh: "筆", en: "pen" }, { zh: "鉛筆", en: "pencil" }, { zh: "尺", en: "ruler" }, { zh: "橡皮擦", en: "eraser" },
+    { zh: "麥可筆", en: "marker" }, { zh: "盒子；箱子", en: "box" }, { zh: "鉛筆盒", en: "pencil box" }, { zh: "地圖", en: "map" },
+    { zh: "顏色", en: "color" }, { zh: "紅色", en: "red" }, { zh: "綠色", en: "green" }, { zh: "藍色", en: "blue" }
+  ],
+ cancer: [
+    { zh: "黃色", en: "yellow" }, { zh: "粉紅色", en: "pink" }, { zh: "黑色", en: "black" }, { zh: "白色", en: "white" },
+    { zh: "臉", en: "face" }, { zh: "眼睛", en: "eye" }, { zh: "鼻子", en: "nose" }, { zh: "耳朵", en: "ear" },
+    { zh: "嘴巴", en: "mouth" }, { zh: "頭", en: "head" }, { zh: "頭髮", en: "hair" }, { zh: "手", en: "hand" },
+    { zh: "腿", en: "leg" }, { zh: "貓", en: "cat" }, { zh: "狗", en: "dog" }, { zh: "鳥", en: "bird" },
+    { zh: "熊", en: "bear" }, { zh: "鴨", en: "duck" }, { zh: "雞", en: "chicken" }, { zh: "老鼠", en: "mouse" }
+  ],
+  leo: [
+    { zh: "豬", en: "pig" }, { zh: "兔子", en: "rabbit" }, { zh: "狐狸", en: "fox" }, { zh: "獅子", en: "lion" },
+    { zh: "老虎", en: "tiger" }, { zh: "羊", en: "sheep" }, { zh: "猴子", en: "monkey" }, { zh: "大象", en: "elephant" },
+    { zh: "馬", en: "horse" }, { zh: "青蛙", en: "frog" }, { zh: "螞蟻", en: "ant" }, { zh: "蜜蜂", en: "bee" },
+    { zh: "蛇", en: "snake" }, { zh: "寵物", en: "pet" }, { zh: "動物", en: "animal" }, { zh: "我的", en: "my" },
+    { zh: "你的", en: "your" }, { zh: "他的", en: "his" }, { zh: "她的", en: "her" }, { zh: "牠的", en: "its" }
+  ],
+  virgo: [
+    { zh: "我們的", en: "our" }, { zh: "他們的", en: "their" }, { zh: "是", en: "is" }, { zh: "不", en: "no" },
+    { zh: "不", en: "not" }, { zh: "好", en: "good" }, { zh: "醫生", en: "doctor" }, { zh: "護士", en: "nurse" },
+    { zh: "歌手", en: "singer" }, { zh: "演員", en: "actor" }, { zh: "廚師", en: "chef" }, { zh: "駕駛員", en: "driver" },
+    { zh: "工程師", en: "engineer" }, { zh: "農夫", en: "farmer" }, { zh: "工人", en: "worker" }, { zh: "名字", en: "name" },
+    { zh: "先生", en: "mr." }, { zh: "太太", en: "mrs." }, { zh: "水果", en: "fruit" }, { zh: "蘋果", en: "apple" }
+  ],
+  libra: [
+    { zh: "梨子", en: "pear" }, { zh: "桃子", en: "peach" }, { zh: "葡萄", en: "grape" }, { zh: "香蕉", en: "banana" },
+    { zh: "水", en: "water" }, { zh: "牛奶", en: "milk" }, { zh: "可口可樂", en: "cola" }, { zh: "果汁", en: "juice" },
+    { zh: "咖啡", en: "coffee" }, { zh: "茶", en: "tea" }, { zh: "蛋", en: "egg" }, { zh: "蛋糕", en: "cake" },
+    { zh: "魚；魚肉", en: "fish" }, { zh: "米；米飯", en: "rice" }, { zh: "早餐", en: "breakfast" }, { zh: "午餐", en: "lunch" },
+    { zh: "晚餐", en: "dinner" }, { zh: "吃", en: "eat" }, { zh: "喝；飲料", en: "drink" }, { zh: "睡", en: "sleep" }
+  ],
+  scorpio: [
+    { zh: "讀；閱讀", en: "read" }, { zh: "玩", en: "play" }, { zh: "去", en: "go" }, { zh: "喜歡", en: "like" },
+    { zh: "聽", en: "listen" }, { zh: "音樂", en: "music" }, { zh: "電影", en: "movie" }, { zh: "漫畫書", en: "comic book" },
+    { zh: "電腦", en: "computer" }, { zh: "公車", en: "bus" }, { zh: "汽車", en: "car" }, { zh: "腳踏車", en: "bicycle" },
+    { zh: "計程車", en: "taxi" }, { zh: "火車", en: "train" }, { zh: "船；艦", en: "ship" }, { zh: "打電話；叫", en: "call" },
+    { zh: "打開", en: "open" }, { zh: "關上", en: "close" }, { zh: "看", en: "watch" }, { zh: "看", en: "look" }
+  ],
+  sagittarius: [
+    { zh: "看", en: "see" }, { zh: "高的", en: "tall" }, { zh: "長的", en: "long" }, { zh: "短的；矮的", en: "short" },
+    { zh: "大的", en: "big" }, { zh: "小的", en: "small" }, { zh: "好的", en: "good" }, { zh: "壞的", en: "bad" },
+    { zh: "美好的", en: "nice" }, { zh: "快樂的", en: "happy" }, { zh: "傷心的", en: "sad" }, { zh: "肥胖的", en: "fat" },
+    { zh: "瘦的；薄的", en: "thin" }, { zh: "強壯的", en: "strong" }, { zh: "可愛的", en: "cute" }, { zh: "生病的", en: "sick" },
+    { zh: "疲倦的", en: "tired" }, { zh: "憤怒的", en: "angry" }, { zh: "餓的", en: "hungry" }, { zh: "渴的", en: "thirsty" }
+  ],
+  capricorn: [
+    { zh: "阿姨", en: "aunt" }, { zh: "叔叔", en: "uncle" }, { zh: "堂/表兄弟姊妹", en: "cousin" }, { zh: "父(母)親", en: "parent" },
+    { zh: "家庭；家人", en: "family" }, { zh: "住", en: "live" }, { zh: "食物", en: "food" }, { zh: "牛肉", en: "beef" },
+    { zh: "豬肉", en: "pork" }, { zh: "湯", en: "soup" }, { zh: "熱狗", en: "hot dog" }, { zh: "三明治", en: "sandwich" },
+    { zh: "番茄", en: "tomato" }, { zh: "柳橙", en: "orange" }, { zh: "蔬菜", en: "vegetable" }, { zh: "麵包", en: "bread" },
+    { zh: "派", en: "pie" }, { zh: "披薩", en: "pizza" }, { zh: "冰淇淋", en: "ice cream" }, { zh: "糖果", en: "candy" }
+  ],
+  aquarius: [
+    { zh: "餅乾", en: "cookie" }, { zh: "漢堡", en: "hamburger" }, { zh: "游泳", en: "swim" }, { zh: "跳舞", en: "dance" },
+    { zh: "跑", en: "run" }, { zh: "跳", en: "jump" }, { zh: "唱", en: "sing" }, { zh: "飛；飛行", en: "fly" },
+    { zh: "可以", en: "can" }, { zh: "有；吃", en: "have" }, { zh: "騎", en: "ride" }, { zh: "駕駛；開車", en: "drive" },
+    { zh: "走", en: "walk" }, { zh: "拿；搭乘", en: "take" }, { zh: "寫", en: "write" }, { zh: "學習；讀書", en: "study" },
+    { zh: "做", en: "do" }, { zh: "做；製作", en: "make" }, { zh: "遊戲；比賽", en: "game" }, { zh: "電腦遊戲", en: "computer game" }
+  ],
+  pisces: [
+    { zh: "卡片", en: "card" }, { zh: "鋼琴", en: "piano" }, { zh: "吉他", en: "guitar" }, { zh: "歌曲", en: "song" },
+    { zh: "球", en: "ball" }, { zh: "棒球", en: "baseball" }, { zh: "籃球", en: "basketball" }, { zh: "足球", en: "soccer" },
+    { zh: "風箏", en: "kite" }, { zh: "娃娃", en: "doll" }, { zh: "春天", en: "spring" }, { zh: "夏天", en: "summer" },
+    { zh: "秋天", en: "autumn" }, { zh: "冬天", en: "winter" }, { zh: "太陽", en: "sun" }, { zh: "月亮", en: "moon" },
+    { zh: "星星", en: "star" }, { zh: "雨", en: "rain" }, { zh: "熱的", en: "hot" }, { zh: "冷的", en: "cold" }
+  ],
+  phoenix: [
+    { zh: "晴朗的", en: "clear" }, { zh: "下雨的", en: "rainy" }, { zh: "多雲的", en: "cloudy" }, { zh: "有風的", en: "windy" },
+    { zh: "暖和的", en: "warm" }, { zh: "涼爽的；很酷的", en: "cool" }, { zh: "天氣", en: "weather" }, { zh: "誰", en: "who" },
+    { zh: "什麼", en: "what" }, { zh: "當…的時候", en: "when" }, { zh: "如何", en: "how" }, { zh: "哪裡", en: "where" },
+    { zh: "哪一個", en: "which" }, { zh: "這裡", en: "here" }, { zh: "那裡", en: "there" }, { zh: "在…之內", en: "inside" },
+    { zh: "在…之上", en: "on" }, { zh: "在…地點", en: "at" }, { zh: "在…之下", en: "under" }, { zh: "從；由", en: "from" }
+  ],
+  draco: [
+    { zh: "外的", en: "outside" }, { zh: "在…外側", en: "outside of" }, { zh: "根據", en: "according to" }, { zh: "為了", en: "for" },
+    { zh: "向；往", en: "toward" }, { zh: "與；用…", en: "with" }, { zh: "和；而且", en: "and" }, { zh: "但是", en: "but" },
+    { zh: "衣服", en: "clothes" }, { zh: "大衣", en: "coat" }, { zh: "夾克", en: "jacket" }, { zh: "褲子", en: "pants" },
+    { zh: "T恤", en: "t-shirt" }, { zh: "短褲", en: "shorts" }, { zh: "裙子", en: "skirt" }, { zh: "襯衫", en: "shirt" },
+    { zh: "洋裝", en: "dress" }, { zh: "(短)襪子", en: "socks" }, { zh: "鞋子", en: "shoes" }, { zh: "梳子 動梳", en: "comb" }
+  ],  orion: [
+    { zh: "袋子；提袋", en: "bag" }, { zh: "帽子(有邊的)", en: "hat" }, { zh: "雨傘", en: "umbrella" }, { zh: "身體", en: "body" },
+    { zh: "牙齒", en: "tooth" }, { zh: "背部", en: "back" }, { zh: "脖子", en: "neck" }, { zh: "唇", en: "lip" },
+    { zh: "手指頭", en: "finger" }, { zh: "腳；足", en: "foot" }, { zh: "天；日子", en: "day" }, { zh: "星期一", en: "Monday" },
+    { zh: "星期二", en: "Tuesday" }, { zh: "星期三", en: "Wednesday" }, { zh: "星期四", en: "Thursday" }, { zh: "星期五", en: "Friday" },
+    { zh: "星期六", en: "Saturday" }, { zh: "星期日", en: "Sunday" }, { zh: "週；一星期", en: "week" }, { zh: "週末", en: "weekend" }
+  ],
+
+  cygnus: [
+    { zh: "月", en: "month" }, { zh: "年", en: "year" }, { zh: "早晨；上午", en: "morning" }, { zh: "午後", en: "afternoon" },
+    { zh: "傍晚；晚上", en: "evening" }, { zh: "夜；晚上", en: "night" }, { zh: "今天", en: "today" }, { zh: "今天晚上", en: "tonight" },
+    { zh: "明天", en: "tomorrow" }, { zh: "昨天", en: "yesterday" }, { zh: "時間；期間", en: "time" }, { zh: "…點鐘", en: "o’clock" },
+    { zh: "上午", en: "a.m." }, { zh: "下午", en: "p.m." }, { zh: "現在", en: "now" }, { zh: "最後的 最後地", en: "last" },
+    { zh: "晚的 晚地", en: "late" }, { zh: "下個 下次的", en: "next" }, { zh: "教室", en: "classroom" }, { zh: "同學", en: "classmate" }
+  ],
+  pegasus: [
+    { zh: "黑板", en: "blackboard" }, { zh: "筆記本", en: "notebook" }, { zh: "紙", en: "paper" }, { zh: "圖畫", en: "picture" },
+    { zh: "英文", en: "English" }, { zh: "中文；中國人", en: "Chinese" }, { zh: "數學", en: "math" }, { zh: "體育", en: "PE" },
+    { zh: "嗨", en: "hi" }, { zh: "哈囉", en: "hello" }, { zh: "再見", en: "goodbye" }, { zh: "說；演說", en: "speak" },
+    { zh: "說", en: "say" }, { zh: "問", en: "ask" }, { zh: "回答；答案", en: "answer" }, { zh: "說話", en: "talk" },
+    { zh: "問題", en: "question" }, { zh: "畫", en: "draw" }, { zh: "穿", en: "wear" }, { zh: "打掃 乾淨的", en: "clean" }
+  ],
+  cassiopeia: [
+    { zh: "洗", en: "wash" }, { zh: "遇見", en: "meet" }, { zh: "過來", en: "come" }, { zh: "想要", en: "want" },
+    { zh: "幫助", en: "help" }, { zh: "使用", en: "use" }, { zh: "新的", en: "new" }, { zh: "年老的", en: "old" },
+    { zh: "快速的", en: "fast" }, { zh: "慢的", en: "slow" }, { zh: "漂亮的", en: "pretty" }, { zh: "英俊的", en: "handsome" },
+    { zh: "聰明的", en: "smart" }, { zh: "美好的", en: "nice" }, { zh: "樂趣", en: "fun" }, { zh: "很棒的", en: "great" },
+    { zh: "乏味的", en: "boring" }, { zh: "一些", en: "some" }, { zh: "非常；很", en: "very" }, { zh: "也；太", en: "too" }
+  ],
+  scorpius: [
+    { zh: "房子；房屋", en: "house" }, { zh: "客廳", en: "living room" }, { zh: "廚房", en: "kitchen" }, { zh: "寢室", en: "bedroom" },
+    { zh: "浴室", en: "bathroom" }, { zh: "門", en: "door" }, { zh: "家", en: "home" }, { zh: "房間", en: "room" },
+    { zh: "牆壁", en: "wall" }, { zh: "床", en: "bed" }, { zh: "玩具", en: "toy" }, { zh: "窗戶", en: "window" },
+    { zh: "電視", en: "TV" }, { zh: "電話", en: "telephone" }, { zh: "風扇", en: "fan" }, { zh: "沙發", en: "sofa" },
+    { zh: "鎖匙", en: "key" }, { zh: "盤子；碟子", en: "plate" }, { zh: "碗", en: "bowl" }, { zh: "筷子", en: "chopsticks" }
+  ],
+  vela: [
+    { zh: "杯子", en: "cup" }, { zh: "玻璃杯", en: "glass" }, { zh: "動物園", en: "zoo" }, { zh: "公園", en: "park" },
+    { zh: "農場", en: "farm" }, { zh: "店舖", en: "shop" }, { zh: "書店", en: "bookstore" }, { zh: "醫院", en: "hospital" },
+    { zh: "銀行", en: "bank" }, { zh: "圖書館", en: "library" }, { zh: "超級市場", en: "supermarket" }, { zh: "台灣", en: "Taiwan" },
+    { zh: "美國", en: "USA" }, { zh: "花", en: "flower" }, { zh: "樹", en: "tree" }, { zh: "旅遊", en: "travel" },
+    { zh: "夢想", en: "dream" }, { zh: "捷運", en: "MRT" }, { zh: "一百(的)", en: "hundred" }, { zh: "元", en: "dollar" }
+],
+    // 其餘請保留你原本完整的字庫結構
+    };
+
+    // 遊戲邏輯變數
+    const params = new URLSearchParams(location.search);
+    const categoryKey = params.get('category') || 'aries';
+    document.getElementById('categoryName').textContent = categoryKey;
+    let words = vocabData[categoryKey] || [];
+    words = words.slice(0, 20);  // 每關最多 20 題
+
+    let current = null;
+    let used = [];
+    let wrongList = [];
+    let correctCount = 0;
+    let timer = null;
+    let timeLeft = 30;
+    let answerStartTime = 0;
+    
+    // 讀取並顯示總星星，不會重置
+    let totalStarCount = parseInt(localStorage.getItem('totalStars') || '0', 10);
+    function updateTotal() {
+      document.getElementById('totalStarCount').textContent = totalStarCount;
+    }
+
+    function speak(text) {
+      if (!text) return;
+      const msg = new SpeechSynthesisUtterance(text);
+      msg.lang = 'en-US';
+      msg.rate = 0.8;
+      if (voices.length > 0) msg.voice = voices.find(v => v.lang === 'en-US') || voices[0];
+      window.speechSynthesis.speak(msg);
+    }
+    function speakCurrentWord() {
+      if (!current) return;
+      speak(current.en);
+    }
+
+    function updateQuestionCount() {
+      document.getElementById('currentQuestion').textContent = used.length;
+    }
+
+    function startTimer() {
+      clearInterval(timer);
+      timeLeft = 30;
+      document.getElementById('timeLeft').textContent = timeLeft;
+      const timerDiv = document.getElementById('timerDisplay');
+      timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timeLeft').textContent = timeLeft;
+        timerDiv.classList.toggle('danger', timeLeft <= 5);
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          wrongList.push(current);
+          nextWord();
+        }
+      }, 1000);
+      answerStartTime = Date.now();
+    }
+
+    function showResultPanel() {
+      // 計算本次獲得星星：答對題數上限 10 顆，乘以 2
+      const earnedStars = Math.min(correctCount, 10);
+      const sessionStars = earnedStars * 2;
+      totalStarCount += sessionStars;
+      localStorage.setItem('totalStars', totalStarCount);
+
+      document.getElementById('sessionStars').textContent = sessionStars;
+      document.getElementById('sessionCorrect').textContent = correctCount;
+      document.getElementById('sessionWrong').textContent = wrongList.length;
+      document.getElementById('sessionTotal').textContent = totalStarCount;
+      document.getElementById('wrongBtn').style.display = wrongList.length ? 'inline-block' : 'none';
+      document.getElementById('resultModal').style.display = 'flex';
+      disablePlay();
+      updateTotal();
+    }
+    function disablePlay() {
+      document.getElementById('answerInput').disabled = true;
+      document.querySelectorAll('.btn-row button').forEach(btn => btn.disabled = true);
+    }
+    function enablePlay() {
+      document.getElementById('answerInput').disabled = false;
+      document.querySelectorAll('.btn-row button').forEach(btn => btn.disabled = false);
+    }
+
+    function showWrongModal() {
+      const list = document.getElementById('wrongItems');
+      list.innerHTML = '';
+      wrongList.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = `${item.zh} — ${item.en}`;
+        list.appendChild(li);
+      });
+      document.getElementById('wrongModal').style.display = 'flex';
+    }
+    function closeWrongModal() {
+      document.getElementById('wrongModal').style.display = 'none';
+    }
+    function goHome() {
+      location.href = 'index.html';
+    }
+
+    function nextWord() {
+      if (used.length >= words.length) {
+        document.getElementById('wordDisplay').textContent = '✅ 挑戰完成';
+        clearInterval(timer);
+        showResultPanel();
+        return;
+      }
+      const available = words.filter(w => !used.includes(w.en));
+      current = available[Math.floor(Math.random() * available.length)];
+      used.push(current.en);
+      updateQuestionCount();
+      document.getElementById('wordDisplay').textContent = current.zh;
+      document.getElementById('answerInput').value = '';
+      document.getElementById('feedback').textContent = '';
+      speak(current.en);
+      startTimer();
+      document.getElementById('resultModal').style.display = 'none';
+      document.getElementById('wrongModal').style.display = 'none';
+      enablePlay();
+    }
+
+    function checkAnswer() {
+      if (!current) return;
+      const ans = document.getElementById('answerInput').value.trim().toLowerCase();
+      if (ans === current.en.toLowerCase()) {
+        document.getElementById('feedback').textContent = '✅ 正確';
+        document.getElementById('feedback').style.color = '#0f0';
+        correctCount++;
+      } else {
+        document.getElementById('feedback').textContent = `❌ 正解是：${current.en}`;
+        document.getElementById('feedback').style.color = '#f66';
+        wrongList.push(current);
+      }
+      clearInterval(timer);
+      setTimeout(() => nextWord(), 800);
+    }
+
+    function restartGame() {
+      used = [];
+      wrongList = [];
+      correctCount = 0;
+      document.getElementById('currentQuestion').textContent = '0';
+      document.getElementById('resultModal').style.display = 'none';
+      document.getElementById('wrongModal').style.display = 'none';
+      nextWord();
+    }
+
+    document.getElementById('answerInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') checkAnswer();
+    });
+// 載入並顯示玩家資訊
+function loadPlayerInfo() {
+  const name = localStorage.getItem('playerName') || '未命名';
+  document.getElementById('playerName').textContent = `玩家：${name}`;
+  const avatarSrc = localStorage.getItem('selectedAvatar');
+  if (avatarSrc) {
+    document.getElementById('playerAvatar').src = avatarSrc;
+  }
+}
+
+// 監聽 localStorage 變動，更新介面
+window.addEventListener('storage', function(e) {
+  if (e.key === 'playerName' || e.key === 'selectedAvatar') {
+    loadPlayerInfo();
+  }
+});
+
+// 載入畫面時執行
+window.addEventListener('load', loadPlayerInfo);
+    // 初始化
+    updateTotal();
+    updateQuestionCount();
+    nextWord();
+  </script>
+</body>
+</html>
